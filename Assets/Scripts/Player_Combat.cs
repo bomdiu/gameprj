@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using System.Collections.Generic; // Cần thêm dòng này để dùng HashSet
 using UnityEngine;
 
 public class Player_Combat : MonoBehaviour
@@ -7,10 +6,6 @@ public class Player_Combat : MonoBehaviour
     public Transform attackPoint;
     public float weaponRange = 1;
     public LayerMask enemyLayer;
-    
-    // --- BỎ DÒNG NÀY ĐI HOẶC ẨN NÓ ĐI ---
-    // public int damage = 1; // Biến này không dùng nữa vì nó không đồng bộ
-    // ------------------------------------
 
     public Animator anim;
     public float cooldown = 2;
@@ -22,30 +17,19 @@ public class Player_Combat : MonoBehaviour
     private void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        originalAttackPos = attackPoint.localPosition;
+        if (attackPoint != null) originalAttackPos = attackPoint.localPosition;
     }
 
     private void Update()
     {
-        if (timer > 0)
-        {
-            timer -= Time.deltaTime;
-        }
+        if (timer > 0) timer -= Time.deltaTime;
 
         if (Input.GetMouseButtonDown(0))
         {
             Attack();
         }
 
-        // Lật vị trí đánh theo hướng nhân vật
-        if (spriteRenderer.flipX)
-        {
-            attackPoint.localPosition = new Vector3(Mathf.Abs(originalAttackPos.x), originalAttackPos.y, 0);
-        }
-        else
-        {
-            attackPoint.localPosition = new Vector3(-Mathf.Abs(originalAttackPos.x), originalAttackPos.y, 0);
-        }
+        HandleFlip();
     }
 
     public void Attack()
@@ -57,47 +41,64 @@ public class Player_Combat : MonoBehaviour
         }
     }
 
-    // --- SỬA CHÍNH Ở ĐÂY ---
+    // --- HÀM GÂY SÁT THƯƠNG ĐÃ ĐƯỢC FIX LỖI "CHẾT LUÔN" ---
     public void DealDamage()
     {
-        Collider2D[] enemies = Physics2D.OverlapCircleAll(
-            attackPoint.position,
-            weaponRange,
-            enemyLayer
-        );
+        Collider2D[] enemies = Physics2D.OverlapCircleAll(attackPoint.position, weaponRange, enemyLayer);
 
-        if (enemies.Length > 0)
+        // Dùng HashSet để chắc chắn mỗi con quái chỉ nhận sát thương 1 lần mỗi nhát chém
+        HashSet<GameObject> hitEnemies = new HashSet<GameObject>();
+
+        int realDamage = 1;
+        if (PlayerStats.Instance != null)
         {
-            // 1. Lấy chỉ số Damage mới nhất từ PlayerStats
-            // Lưu ý: Phải ép kiểu (int) vì PlayerStats dùng float còn hàm TakeDamage của bạn có vẻ dùng int
-            int realDamage = 1; // Mặc định là 1 phòng trường hợp lỗi
+            realDamage = Mathf.RoundToInt(PlayerStats.Instance.attackDamage);
+        }
 
-            if (PlayerStats.Instance != null)
-            {
-                realDamage = (int)PlayerStats.Instance.attackDamage;
-            }
+        foreach (Collider2D enemyCollider in enemies)
+        {
+            // Lấy GameObject chính của con quái
+            GameObject enemyObj = enemyCollider.gameObject;
 
-            // 2. Gây sát thương
-            Enemy_Health enemy = enemies[0].GetComponent<Enemy_Health>();
-            if (enemy != null)
+            if (!hitEnemies.Contains(enemyObj))
             {
-                // Truyền realDamage vào thay vì biến damage cũ
-                enemy.TakeDamage(-realDamage, DamageType.NormalAttack);
-                
-                // Debug để kiểm tra xem damage đã tăng chưa
-                Debug.Log("Đã chém: " + realDamage + " sát thương!"); 
+                Enemy_Health health = enemyObj.GetComponent<Enemy_Health>();
+                if (health != null)
+                {
+                    // Truyền số dương. Enemy_Health sẽ tự trừ máu.
+                    health.TakeDamage(realDamage, DamageType.NormalAttack);
+                    
+                    // HIỆN THÔNG BÁO: Kiểm tra sát thương có bị quá lớn không
+                    Debug.Log("<color=cyan>Player gây: </color>" + realDamage + " sát thương lên " + enemyObj.name);
+                    
+                    hitEnemies.Add(enemyObj);
+                }
             }
         }
     }
-    // -----------------------
 
     public void FinishAttacking()
     {
         anim.SetBool("isAttacking", false);
     }
 
+    private void HandleFlip()
+    {
+        if (spriteRenderer == null || attackPoint == null) return;
+
+        if (spriteRenderer.flipX)
+        {
+            attackPoint.localPosition = new Vector3(Mathf.Abs(originalAttackPos.x), originalAttackPos.y, 0);
+        }
+        else
+        {
+            attackPoint.localPosition = new Vector3(-Mathf.Abs(originalAttackPos.x), originalAttackPos.y, 0);
+        }
+    }
+
     private void OnDrawGizmosSelected()
     {
+        if (attackPoint == null) return;
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(attackPoint.position, weaponRange);
     }

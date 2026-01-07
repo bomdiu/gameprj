@@ -10,35 +10,83 @@ public class PlayerStats : MonoBehaviour
     public float moveSpeed = 5f;
     public float attackDamage = 10f;
 
-    // --- THÊM: Tham chiếu đến script di chuyển ---
-    // (Bạn hãy thay 'PlayerMovement' bằng tên chính xác script di chuyển của bạn)
+    [Header("References")]
     public PlayerMovement movementScript; 
-    
-    // --- THÊM: Tham chiếu đến script thanh máu (nếu có) ---
     public HealthBarUI healthBarScript; 
+    private DamageFlash damageFlash; 
+
+    [Header("Damage Text Settings")]
+    public GameObject damageTextPrefab; // Kéo Prefab DamageText vào đây
+    public Vector3 textOffset = new Vector3(0, 1.5f, 0); // Vị trí hiện số trên đầu
+
+    private bool isDead = false;
 
     private void Awake()
     {
-        Instance = this;
+        if (Instance == null) Instance = this;
         currentHealth = maxHealth;
     }
 
     private void Start()
     {
-        // Tự động tìm script di chuyển trên cùng nhân vật (nếu quên kéo thả)
+        damageFlash = GetComponent<DamageFlash>();
+
         if (movementScript == null) 
             movementScript = GetComponent<PlayerMovement>();
             
-        // Cập nhật tốc độ ban đầu cho script di chuyển luôn cho chắc
         if (movementScript != null)
-             movementScript.moveSpeed = moveSpeed; // Thay 'moveSpeed' bằng tên biến trong script di chuyển của bạn
+             movementScript.moveSpeed = moveSpeed; 
         
-        if (healthBarScript != null)
+        UpdateUI();
+    }
+
+    public void TakeDamage(float damage)
+    {
+        if (isDead) return;
+
+        // 1. Trừ máu và chặn không cho xuống dưới 0
+        currentHealth -= damage;
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+
+        Debug.Log("Player bị đánh! Máu còn: " + currentHealth);
+
+        // 2. HIỆN SỐ SÁT THƯƠNG (Màu đỏ cho Player bị đánh)
+        SpawnDamageText(Mathf.RoundToInt(damage), Color.red);
+
+        // 3. Hiệu ứng nháy đỏ
+        if (damageFlash != null)
         {
-            healthBarScript.SetMaxHealth(maxHealth);
-            healthBarScript.SetHealth(currentHealth);
+            damageFlash.Flash();
         }
-        // Khởi tạo hiển thị thanh máu lúc đầu game
+
+        // 4. Cập nhật thanh máu UI
+        UpdateUI();
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    // Hàm tạo số sát thương nhảy lên
+    public void SpawnDamageText(int amount, Color color)
+    {
+        if (damageTextPrefab != null)
+        {
+            // Tạo ra Prefab chữ tại vị trí Player + một khoảng lệch lên trên
+            GameObject popup = Instantiate(damageTextPrefab, transform.position + textOffset, Quaternion.identity);
+            
+            // Gọi hàm Setup của script DamagePopup (Script t đưa m ở trên)
+            DamagePopup popupScript = popup.GetComponent<DamagePopup>();
+            if (popupScript != null)
+            {
+                popupScript.Setup(amount, color);
+            }
+        }
+    }
+
+    private void UpdateUI()
+    {
         if (healthBarScript != null)
         {
             healthBarScript.SetMaxHealth(maxHealth);
@@ -53,57 +101,23 @@ public class PlayerStats : MonoBehaviour
             case SkillData.SkillType.AttackUp:
                 attackDamage += amount;
                 break;
-
             case SkillData.SkillType.HealthUp:
                 maxHealth += amount;
                 currentHealth += amount;
-                
-                // --- CẬP NHẬT UI THANH MÁU ---
-                if (healthBarScript != null)
-                {
-                    healthBarScript.SetMaxHealth(maxHealth); // Cần viết hàm này bên script HealthBar
-                    healthBarScript.SetHealth(currentHealth);
-                }
+                UpdateUI();
                 break;
-
             case SkillData.SkillType.SpeedUp:
                 moveSpeed += amount;
-                
-                // --- CẬP NHẬT TỐC ĐỘ DI CHUYỂN NGAY LẬP TỨC ---
-                if (movementScript != null)
-                {
-                    // Giả sử bên script PlayerMovement biến tốc độ tên là 'moveSpeed'
-                    // Nếu nó tên là 'speed', hãy sửa thành movementScript.speed = moveSpeed;
-                    movementScript.moveSpeed = moveSpeed; 
-                }
+                if (movementScript != null) movementScript.moveSpeed = moveSpeed; 
                 break;
         }
-        Debug.Log($"Nâng cấp {type} thành công! Chỉ số mới: HP={maxHealth}, Speed={moveSpeed}");
     }
     
-    public void TakeDamage(float damage)
-    {
-        // 1. Trừ máu
-        currentHealth -= damage;
-        Debug.Log("Player bị đánh! Máu còn: " + currentHealth);
-
-        // 2. Cập nhật ngay lên thanh máu UI (Đây là cái bạn đang thiếu)
-        if (healthBarScript != null)
-        {
-            healthBarScript.SetHealth(currentHealth);
-        }
-
-        // 3. Kiểm tra chết
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
-    }
-
     void Die()
     {
+        if (isDead) return;
+        isDead = true;
         Debug.Log("Player đã nghẻo!");
-        // Thêm code Game Over hoặc reload scene ở đây
-        // Destroy(gameObject); 
+        gameObject.SetActive(false); 
     }
 }

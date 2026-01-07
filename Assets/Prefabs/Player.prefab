@@ -218,7 +218,7 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
-  m_CollisionDetection: 0
+  m_CollisionDetection: 1
   m_Constraints: 4
 --- !u!95 &7540257230774484538
 Animator:
@@ -344,6 +344,8 @@ MonoBehaviour:
   attackDamage: 25
   movementScript: {fileID: 9035811756601357861}
   healthBarScript: {fileID: 0}
+  damageTextPrefab: {fileID: 8110601638250219120, guid: a12e825899b06414d8893e0404a71d10, type: 3}
+  textOffset: {x: 0, y: 1.5, z: 0}
 --- !u!114 &2109877912359877098
 MonoBehaviour:
   m_ObjectHideFlags: 0
