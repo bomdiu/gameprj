@@ -3,35 +3,64 @@ using System.Collections;
 
 public class DamageFlash : MonoBehaviour
 {
-    public Color flashColor = Color.red;
-    public float flashDuration = 0.1f; 
+    [Header("Fade Settings")]
+    public float flashDuration = 0.15f; // Thời gian dài hơn một chút để thấy rõ fade
+    [Range(0, 1)] public float maxFlashAmount = 0.9f; 
 
-    private SpriteRenderer spriteRenderer;
-    private Color originalColor;
+    private SpriteRenderer[] spriteRenderers;
+    private MaterialPropertyBlock propBlock;
 
     void Awake()
     {
-        // Tìm SpriteRenderer ở cả cha và các object con
-        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        if (spriteRenderer != null)
-        {
-            originalColor = spriteRenderer.color;
-        }
+        spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        propBlock = new MaterialPropertyBlock();
     }
 
     public void Flash()
     {
-        if (spriteRenderer == null) return;
-
-        Debug.Log("Flash đã được kích hoạt!"); // Dòng này sẽ hiện trong Console
-        StopAllCoroutines(); 
+        StopAllCoroutines();
         StartCoroutine(FlashRoutine());
     }
 
     private IEnumerator FlashRoutine()
     {
-        spriteRenderer.color = flashColor;
-        yield return new WaitForSeconds(flashDuration);
-        spriteRenderer.color = originalColor;
+        float elapsed = 0f;
+
+        while (elapsed < flashDuration)
+        {
+            elapsed += Time.unscaledDeltaTime; // Dùng unscaled để mượt khi hitstop
+
+            // Tính toán độ trắng giảm dần từ 0.9 về 0
+            float currentAmount = Mathf.Lerp(maxFlashAmount, 0f, elapsed / flashDuration);
+
+            // Cập nhật giá trị vào Shader mà không cần tạo Material mới (tối ưu hiệu năng)
+            foreach (var sr in spriteRenderers)
+            {
+                sr.GetPropertyBlock(propBlock);
+                propBlock.SetFloat("_FlashAmount", currentAmount);
+                sr.SetPropertyBlock(propBlock);
+            }
+
+            yield return null;
+        }
+
+        // Đảm bảo kết thúc trả về 0
+        SetFlashAmount(0);
+    }
+public void FlashIndefinitely() 
+{
+    StopAllCoroutines(); // Stops the FlashRoutine from fading the color back to normal
+    
+    // Forces the shader to stay at the maximum flash amount
+    SetFlashAmount(maxFlashAmount); 
+}
+    private void SetFlashAmount(float amount)
+    {
+        foreach (var sr in spriteRenderers)
+        {
+            sr.GetPropertyBlock(propBlock);
+            propBlock.SetFloat("_FlashAmount", amount);
+            sr.SetPropertyBlock(propBlock);
+        }
     }
 }

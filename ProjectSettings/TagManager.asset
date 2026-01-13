@@ -3,18 +3,19 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Enemy
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Damage Text
   - Water
   - UI
   - Player
   - Enemy
   - Tilemap
-  - 
+  - Obstacles
   - 
   - 
   - 
@@ -55,4 +56,7 @@ TagManager:
     locked: 0
   - name: Tilemap
     uniqueID: 28043609
+    locked: 0
+  - name: DamageText
+    uniqueID: 1384360559
     locked: 0

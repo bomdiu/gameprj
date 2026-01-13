@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 94072cb08ef66f543aecd3c3d1d330c1
+guid: a3c56954974ed374591ea466aa4febca
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -123,7 +123,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: cay so 2-Sheet_0
+      name: green tree-Sheet_0
       rect:
         serializedVersion: 2
         x: 0
@@ -131,20 +131,20 @@ TextureImporter:
         width: 128
         height: 128
       alignment: 9
-      pivot: {x: 0.5, y: 0.11}
+      pivot: {x: 0.50884664, y: 0.2356194}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b8ea70b488d0a77459089c061ab60155
-      internalID: 31879511
+      spriteID: c94d04728904bc149bdad4abe9cce5ab
+      internalID: -516732505
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: cay so 2-Sheet_1
+      name: green tree-Sheet_1
       rect:
         serializedVersion: 2
         x: 128
@@ -152,20 +152,20 @@ TextureImporter:
         width: 128
         height: 128
       alignment: 9
-      pivot: {x: 0.5, y: 0.11}
+      pivot: {x: 0.5106158, y: 0.2196957}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 053c27fc8704f3e4e86821541226eba9
-      internalID: -1949684945
+      spriteID: a7f68427f8d12f34d975e6484cf45320
+      internalID: 917515888
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: cay so 2-Sheet_2
+      name: green tree-Sheet_2
       rect:
         serializedVersion: 2
         x: 256
@@ -173,14 +173,14 @@ TextureImporter:
         width: 128
         height: 128
       alignment: 9
-      pivot: {x: 0.5, y: 0.11}
+      pivot: {x: 0.5090873, y: 0.2214651}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 66e60e8082622d44986a325a70276dc4
-      internalID: 1887074204
+      spriteID: 90eca5c6f8869b440ac362d8f5fb103e
+      internalID: 1477512501
       vertices: []
       indices: 
       edges: []
@@ -196,9 +196,9 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      cay so 2-Sheet_0: 31879511
-      cay so 2-Sheet_1: -1949684945
-      cay so 2-Sheet_2: 1887074204
+      green tree-Sheet_0: -516732505
+      green tree-Sheet_1: 917515888
+      green tree-Sheet_2: 1477512501
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -8,83 +8,106 @@ public class PlayerMovement : MonoBehaviour
     public float dashDuration = 0.2f;
     public float dashCooldown = 1f;
 
+    [Header("Components")]
     public Animator anim;
+    [SerializeField] private Transform visualsTransform; 
     private Rigidbody2D rb;
-    private SpriteRenderer spriteRenderer;
+    private Camera cam; // Reference to the main camera
+
     private Vector2 moveInput;
     private bool isDashing = false;
     private float dashTimeLeft;
     private float lastDash = -10f;
 
-    public Player_Combat player_Combat;
-
-    // THÊM DÒNG NÀY
-    private Player_SweepSkill sweepSkill;
+    [HideInInspector] public bool canMove = true; 
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        cam = Camera.main; // Initialize the camera
+        
+        transform.localScale = Vector3.one;
 
-        // LẤY THAM CHIẾU SKILL
-        sweepSkill = GetComponent<Player_SweepSkill>();
+        if (anim == null) anim = GetComponentInChildren<Animator>();
+        if (visualsTransform == null && anim != null) visualsTransform = anim.transform;
     }
 
     void Update()
     {
-        // Attack input
-        if (Input.GetMouseButtonDown(0))
-        {
-            player_Combat.Attack();
-        }
+        // 1. Always face the cursor regardless of movement
+        FaceCursor();
 
-        // Movement input (nếu không dash & không recoil)
-        if (!isDashing && (sweepSkill == null || !sweepSkill.isRecoiling))
+        if (canMove && !isDashing)
         {
             moveInput.x = Input.GetAxisRaw("Horizontal");
             moveInput.y = Input.GetAxisRaw("Vertical");
             moveInput.Normalize();
+        }
+        else if (!isDashing)
+        {
+            moveInput = Vector2.zero;
+        }
 
-            // Flip sprite
-            if (moveInput.x < 0) spriteRenderer.flipX = false;
-            if (moveInput.x > 0) spriteRenderer.flipX = true;
-
-            // Update animator
+        if (anim != null)
+        {
             anim.SetFloat("horizontal", Mathf.Abs(moveInput.x));
             anim.SetFloat("vertical", Mathf.Abs(moveInput.y));
         }
 
-        // Dash (Space)
-        if (Input.GetKeyDown(KeyCode.Space) && Time.time >= lastDash + dashCooldown)
+        if (Input.GetKeyDown(KeyCode.Space) && Time.time >= lastDash + dashCooldown && canMove)
         {
-            isDashing = true;
-            dashTimeLeft = dashDuration;
-            lastDash = Time.time;
+            StartDash();
+        }
+    }
+
+    private void FaceCursor()
+    {
+        if (visualsTransform == null) return;
+
+        // Convert mouse position to world space
+        Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
+
+        // --- LOGIC FOR LEFT-FACING DEFAULT SPRITE ---
+        // If mouse is to the RIGHT of the player, flip scale to -1
+        if (mousePos.x > transform.position.x)
+        {
+            visualsTransform.localScale = new Vector3(-1, 1, 1);
+        }
+        // If mouse is to the LEFT of the player, reset scale to 1
+        else
+        {
+            visualsTransform.localScale = new Vector3(1, 1, 1);
         }
     }
 
     void FixedUpdate()
     {
-        // NẾU ĐANG RECOIL → KHÔNG ĐƯỢC GHI ĐÈ VELOCITY
-        if (sweepSkill != null && sweepSkill.isRecoiling)
-        {
-            return;
-        }
-
         if (isDashing)
         {
-            rb.velocity = moveInput * dashSpeed;
-
-            dashTimeLeft -= Time.fixedDeltaTime;
-            if (dashTimeLeft <= 0)
-            {
-                isDashing = false;
-                rb.velocity = Vector2.zero;
-            }
+            ApplyDashMovement();
         }
-        else
+        else if (canMove) 
         {
             rb.velocity = moveInput * moveSpeed;
+        }
+    }
+
+    private void StartDash()
+    {
+        isDashing = true;
+        dashTimeLeft = dashDuration;
+        lastDash = Time.time;
+        // FaceCursor in Update will handle the flip during the dash
+    }
+
+    private void ApplyDashMovement()
+    {
+        rb.velocity = moveInput * dashSpeed;
+        dashTimeLeft -= Time.fixedDeltaTime;
+        if (dashTimeLeft <= 0)
+        {
+            isDashing = false;
+            rb.velocity = Vector2.zero;
         }
     }
 }

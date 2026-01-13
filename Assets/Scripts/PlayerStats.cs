@@ -16,8 +16,8 @@ public class PlayerStats : MonoBehaviour
     private DamageFlash damageFlash; 
 
     [Header("Damage Text Settings")]
-    public GameObject damageTextPrefab; // Kéo Prefab DamageText vào đây
-    public Vector3 textOffset = new Vector3(0, 1.5f, 0); // Vị trí hiện số trên đầu
+    public GameObject damageTextPrefab; 
+    public Vector3 textOffset = new Vector3(0, 1.5f, 0); 
 
     private bool isDead = false;
 
@@ -29,6 +29,16 @@ public class PlayerStats : MonoBehaviour
 
     private void Start()
     {
+        // Auto-link logic for the health bar
+        if (healthBarScript == null)
+        {
+            GameObject foundObj = GameObject.Find("healthbar");
+            if (foundObj != null)
+            {
+                healthBarScript = foundObj.GetComponent<HealthBarUI>();
+            }
+        }
+
         damageFlash = GetComponent<DamageFlash>();
 
         if (movementScript == null) 
@@ -44,44 +54,25 @@ public class PlayerStats : MonoBehaviour
     {
         if (isDead) return;
 
-        // 1. Trừ máu và chặn không cho xuống dưới 0
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
-        Debug.Log("Player bị đánh! Máu còn: " + currentHealth);
-
-        // 2. HIỆN SỐ SÁT THƯƠNG (Màu đỏ cho Player bị đánh)
         SpawnDamageText(Mathf.RoundToInt(damage), Color.red);
 
-        // 3. Hiệu ứng nháy đỏ
-        if (damageFlash != null)
-        {
-            damageFlash.Flash();
-        }
+        if (damageFlash != null) damageFlash.Flash();
 
-        // 4. Cập nhật thanh máu UI
         UpdateUI();
 
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+        if (currentHealth <= 0) Die();
     }
 
-    // Hàm tạo số sát thương nhảy lên
     public void SpawnDamageText(int amount, Color color)
     {
         if (damageTextPrefab != null)
         {
-            // Tạo ra Prefab chữ tại vị trí Player + một khoảng lệch lên trên
             GameObject popup = Instantiate(damageTextPrefab, transform.position + textOffset, Quaternion.identity);
-            
-            // Gọi hàm Setup của script DamagePopup (Script t đưa m ở trên)
             DamagePopup popupScript = popup.GetComponent<DamagePopup>();
-            if (popupScript != null)
-            {
-                popupScript.Setup(amount, color);
-            }
+            if (popupScript != null) popupScript.Setup(amount, color);
         }
     }
 
@@ -117,7 +108,7 @@ public class PlayerStats : MonoBehaviour
     {
         if (isDead) return;
         isDead = true;
-        Debug.Log("Player đã nghẻo!");
+        Debug.Log("Player has died!");
         gameObject.SetActive(false); 
     }
 }
