@@ -13,7 +13,7 @@ public class PlayerStats : MonoBehaviour
     [Header("References")]
     public PlayerMovement movementScript; 
     public HealthBarUI healthBarScript; 
-    private DamageFlash damageFlash; 
+    public DamageFlash damageFlash; 
 
     [Header("Damage Text Settings")]
     public GameObject damageTextPrefab; 

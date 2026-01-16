@@ -3,6 +3,13 @@ using System.Collections;
 
 public class Enemy_Health : MonoBehaviour
 {
+    [Header("Stats Configuration")]
+    public int maxHealth = 100;
+
+    [Header("Visual Settings")]
+    [Tooltip("The sorting layer the enemy moves to when dying (e.g., 'Foreground')")]
+    public string deathSortingLayer = "Foreground"; 
+
     [Header("Settings")]
     public GameObject damageTextPrefab; 
     public int energyReward = 10;
@@ -27,8 +34,8 @@ public class Enemy_Health : MonoBehaviour
     [SerializeField] private Vector3 deathSquashScale = new Vector3(1.8f, 0.3f, 1f);
     
     [Header("Death Timing")]
-    [SerializeField] private float deathStartVelocity = 35f; // Vận tốc bùng nổ ban đầu
-    [SerializeField] private float deathKnockbackDuration = 0.1f; // Thời gian bay lùi (nên dài hơn một chút để thấy rõ độ giảm tốc)
+    [SerializeField] private float deathStartVelocity = 35f; 
+    [SerializeField] private float deathKnockbackDuration = 0.1f; 
     [SerializeField] private float deathVerticalPop = 0.5f; 
 
     [Header("Visual Orientation")]
@@ -58,8 +65,12 @@ public class Enemy_Health : MonoBehaviour
 
     private void Start()
     {
-        if (stats != null) currentHealth = stats.maxHealth;
-        else currentHealth = 100;
+        currentHealth = maxHealth;
+        if (stats != null) 
+        {
+            maxHealth = stats.maxHealth;
+            currentHealth = maxHealth;
+        }
     }
 
     private void Update()
@@ -94,6 +105,84 @@ public class Enemy_Health : MonoBehaviour
         ApplyAutoKnockback();
     }
 
+    // --- FIX: UPDATED DIE FUNCTION ---
+    void Die()
+    {
+        if (isDead) return;
+        isDead = true;
+
+        // 1. UPDATE SORTING LAYER IMMEDIATELY
+        if (sr != null && !string.IsNullOrEmpty(deathSortingLayer))
+        {
+            sr.sortingLayerName = deathSortingLayer;
+        }
+
+        // 2. DISABLE COLLIDER IMMEDIATELY
+        // This is what allows bullets to go through and prevents pushing other enemies
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
+        // Shutdown Brain/AI
+        MonoBehaviour[] scripts = GetComponents<MonoBehaviour>();
+        foreach (MonoBehaviour s in scripts)
+        {
+            if (s != this) s.enabled = false;
+        }
+
+        StartCoroutine(DeathSequenceRoutine());
+    }
+
+    // --- FIX: UPDATED DEATH SEQUENCE ---
+    private IEnumerator DeathSequenceRoutine()
+    {
+        // 3. INITIAL EXPLOSIVE VELOCITY
+        // Still works because rb.simulated is true here
+        GameObject player = GameObject.FindWithTag("Player");
+        if (player != null && rb != null)
+        {
+            Vector2 direction = ((Vector2)transform.position - (Vector2)player.transform.position).normalized;
+            direction.y += deathVerticalPop;
+            rb.velocity = direction.normalized * deathStartVelocity;
+        }
+
+        if (damageFlash != null) damageFlash.FlashIndefinitely();
+
+        // 4. DECREASE VELOCITY OVER TIME
+        float elapsed = 0f;
+        Vector2 initialVelocity = rb.velocity;
+
+        while (elapsed < deathKnockbackDuration)
+        {
+            elapsed += Time.deltaTime;
+            if (rb != null)
+            {
+                rb.velocity = Vector2.Lerp(initialVelocity, Vector2.zero, elapsed / deathKnockbackDuration);
+            }
+            yield return null;
+        }
+
+        // 5. COMPLETE STOP & FREEZE
+        // Now we turn off simulation after the movement animation is done
+        if (rb != null)
+        {
+            rb.velocity = Vector2.zero;
+            rb.simulated = false; 
+        }
+
+        if (morphCoroutine != null) StopCoroutine(morphCoroutine);
+        transform.localScale = Vector3.Scale(originalScale, deathSquashScale);
+
+        // 6. LINGER & DESTROY
+        yield return new WaitForSeconds(deathDestroyDelay);
+
+        if (deathParticlePrefab != null) Instantiate(deathParticlePrefab, transform.position, Quaternion.identity);
+        if (HitStopManager.Instance != null) HitStopManager.Instance.HitStop(deathHitstop);
+
+        if (WaveManager.Instance != null) WaveManager.Instance.OnEnemyKilled();
+        Destroy(gameObject); 
+    }
+
+    // --- REMAINING FUNCTIONS UNCHANGED ---
     private void ApplyMorphEffect()
     {
         if (morphCoroutine != null) StopCoroutine(morphCoroutine);
@@ -116,74 +205,6 @@ public class Enemy_Health : MonoBehaviour
         transform.localScale = originalScale;
     }
 
-    void Die()
-    {
-        if (isDead) return;
-        isDead = true;
-
-        // Shutdown Brain
-        MonoBehaviour[] scripts = GetComponents<MonoBehaviour>();
-        foreach (MonoBehaviour s in scripts)
-        {
-            if (s != this) s.enabled = false;
-        }
-
-        StartCoroutine(DeathSequenceRoutine());
-    }
-
-    private IEnumerator DeathSequenceRoutine()
-    {
-        // 1. INITIAL EXPLOSIVE VELOCITY
-        GameObject player = GameObject.FindWithTag("Player");
-        if (player != null && rb != null)
-        {
-            Vector2 direction = ((Vector2)transform.position - (Vector2)player.transform.position).normalized;
-            direction.y += deathVerticalPop;
-            rb.velocity = direction.normalized * deathStartVelocity;
-        }
-
-        if (damageFlash != null) damageFlash.FlashIndefinitely();
-
-        // 2. DECREASE VELOCITY OVER TIME (The Smooth Slowdown)
-        float elapsed = 0f;
-        Vector2 initialVelocity = rb.velocity;
-
-        while (elapsed < deathKnockbackDuration)
-        {
-            elapsed += Time.deltaTime;
-            // Giảm dần vận tốc về 0 dựa trên thời gian duration
-            if (rb != null)
-            {
-                rb.velocity = Vector2.Lerp(initialVelocity, Vector2.zero, elapsed / deathKnockbackDuration);
-            }
-            yield return null;
-        }
-
-        // 3. COMPLETE STOP & FREEZE
-        if (rb != null)
-        {
-            rb.velocity = Vector2.zero;
-            rb.simulated = false; 
-        }
-
-        Collider2D col = GetComponent<Collider2D>();
-        if (col != null) col.enabled = false;
-
-        if (morphCoroutine != null) StopCoroutine(morphCoroutine);
-        transform.localScale = Vector3.Scale(originalScale, deathSquashScale);
-
-        // 4. LINGER
-        yield return new WaitForSeconds(deathDestroyDelay);
-
-        // 5. DISAPPEAR
-        if (deathParticlePrefab != null) Instantiate(deathParticlePrefab, transform.position, Quaternion.identity);
-        if (HitStopManager.Instance != null) HitStopManager.Instance.HitStop(deathHitstop);
-
-        if (WaveManager.Instance != null) WaveManager.Instance.OnEnemyKilled();
-        Destroy(gameObject); 
-    }
-
-    // --- REMAINDER OF FUNCTIONS UNCHANGED ---
     public void ChangeHealth(int amount)
     {
         if (amount < 0) 
@@ -199,7 +220,7 @@ public class Enemy_Health : MonoBehaviour
         else 
         {
             currentHealth += amount;
-            if (stats != null) currentHealth = Mathf.Min(currentHealth, stats.maxHealth);
+            currentHealth = Mathf.Min(currentHealth, maxHealth);
         }
 
         if (currentHealth <= 0)
@@ -229,6 +250,7 @@ public class Enemy_Health : MonoBehaviour
 
     public bool IsKnockedBack() => knockbackTimer > 0;
     private void ApplyDamageLogic(int amount) { currentHealth = Mathf.Max(currentHealth - amount, 0); }
+
     void ShowDamagePopup(int amount)
     {
         if (damageTextPrefab != null)
@@ -240,6 +262,7 @@ public class Enemy_Health : MonoBehaviour
             if (popupScript != null) popupScript.Setup(amount, Color.yellow); 
         }
     }
+
     void GiveEnergy()
     {
         Player_Energy energy = FindObjectOfType<Player_Energy>();

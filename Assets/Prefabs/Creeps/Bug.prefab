@@ -13,16 +13,14 @@ GameObject:
   - component: {fileID: 2143881184046550849}
   - component: {fileID: 8502112970957888481}
   - component: {fileID: 478245486859965908}
-  - component: {fileID: 1499293760718761603}
   - component: {fileID: 9037773837044986874}
   - component: {fileID: 6573291172307356612}
   - component: {fileID: 799680554409428672}
   - component: {fileID: 2368162368489050516}
   - component: {fileID: 5417629622614539347}
-  - component: {fileID: 6286247202073606020}
   m_Layer: 7
   m_Name: Bug
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -42,6 +40,7 @@ Transform:
   m_Children:
   - {fileID: 940558423303029299}
   - {fileID: 6176980323622023550}
+  - {fileID: 4498718113465370146}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &8019961841025301167
@@ -156,6 +155,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6be1e4af08e2e3e47b4a74b00bc1f48b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  maxHealth: 50
+  deathSortingLayer: UI
   damageTextPrefab: {fileID: 8110601638250219120, guid: a12e825899b06414d8893e0404a71d10, type: 3}
   energyReward: 10
   hitstopDuration: 0.05
@@ -165,7 +166,7 @@ MonoBehaviour:
   squashHoldDuration: 0.1
   morphRestoreSpeed: 8
   deathParticlePrefab: {fileID: 5744155556297248092, guid: 54233372e8c073e4aab2d9ec523963a0, type: 3}
-  deathHitstop: 0.1
+  deathHitstop: 0.05
   deathDestroyDelay: 0.5
   deathSquashScale: {x: 1.4, y: 0.8, z: 1}
   deathStartVelocity: 10
@@ -173,21 +174,6 @@ MonoBehaviour:
   deathVerticalPop: 0.5
   isFacingRightByDefault: 1
   currentHealth: 0
---- !u!114 &1499293760718761603
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 194198021288000057}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d95abf7c44493d4f8e458f910f45a5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  baseDamage: 15
-  attackSpeed: 1
-  maxHealth: 100
 --- !u!114 &9037773837044986874
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -227,12 +213,13 @@ MonoBehaviour:
     m_Bits: 512
   staticLookAhead: 1
   staticAvoidForce: 1
+  staticDetectionRadius: 0.9
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
   swarmLookAhead: 0.8
   swarmAvoidForce: 1
-  detectionRadius: 0.5
+  swarmDetectionRadius: 0.4
   turnSmoothing: 0.15
 --- !u!114 &799680554409428672
 MonoBehaviour:
@@ -298,18 +285,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   flashDuration: 0.15
   maxFlashAmount: 1
---- !u!114 &6286247202073606020
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 194198021288000057}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1c11d99e3e1712e41aa24512a716f11d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1537163069742805424
 GameObject:
   m_ObjectHideFlags: 0
@@ -341,6 +316,90 @@ Transform:
   m_Children: []
   m_Father: {fileID: 383862622128182257}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2537486339253998856
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4498718113465370146}
+  - component: {fileID: 7865926570846987890}
+  m_Layer: 7
+  m_Name: shadow
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4498718113465370146
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2537486339253998856}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.02, y: -0.06, z: 0}
+  m_LocalScale: {x: -1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 383862622128182257}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &7865926570846987890
+SpriteRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2537486339253998856}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: -520290631
+  m_SortingLayer: -1
+  m_SortingOrder: 0
+  m_Sprite: {fileID: 21300000, guid: 474a2498079ae2b4e8f2ceab4a5de6ac, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.39215687}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 0.64, y: 0.64}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_MaskInteraction: 0
+  m_SpriteSortPoint: 0
 --- !u!1 &3053248406426412597
 GameObject:
   m_ObjectHideFlags: 0

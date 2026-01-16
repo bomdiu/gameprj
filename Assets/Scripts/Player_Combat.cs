@@ -4,9 +4,9 @@ using System.Collections;
 public class PlayerCombat : MonoBehaviour
 {
     [Header("Combo Damage")]
-    [SerializeField] private int damage1 = 10;
-    [SerializeField] private int damage2 = 12;
-    [SerializeField] private int damage3 = 25;
+    [SerializeField] public int damage1 = 10;
+    [SerializeField] public int damage2 = 12;
+    [SerializeField] public int damage3 = 25;
 
     [Header("Combo Timing")]
     [SerializeField] private float cooldown1to2 = 0.12f; 
@@ -25,6 +25,36 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private GameObject hitbox2; 
     [SerializeField] private GameObject hitbox3; 
     
+    [Header("VFX Prefabs (Right Facing)")]
+    [SerializeField] private GameObject splashRight1;
+    [SerializeField] private GameObject splashRight2;
+    [SerializeField] private GameObject splashRight3;
+
+    [Header("VFX Prefabs (Left Facing)")]
+    [SerializeField] private GameObject splashLeft1;
+    [SerializeField] private GameObject splashLeft2;
+    [SerializeField] private GameObject splashLeft3;
+
+    [Header("VFX Offset (Right Facing)")]
+    [SerializeField] private float offsetRight1 = 1.5f;
+    [SerializeField] private float offsetRight2 = 1.5f;
+    [SerializeField] private float offsetRight3 = 1.5f;
+
+    [Header("VFX Offset (Left Facing)")]
+    [SerializeField] private float offsetLeft1 = 1.5f;
+    [SerializeField] private float offsetLeft2 = 1.5f;
+    [SerializeField] private float offsetLeft3 = 1.5f;
+
+    [Header("VFX Rotation (Right Facing)")]
+    [SerializeField] private float rotationRight1 = 0f;
+    [SerializeField] private float rotationRight2 = 0f;
+    [SerializeField] private float rotationRight3 = 0f;
+
+    [Header("VFX Rotation (Left Facing)")]
+    [SerializeField] private float rotationLeft1 = 0f;
+    [SerializeField] private float rotationLeft2 = 0f;
+    [SerializeField] private float rotationLeft3 = 0f;
+
     [Header("References")]
     [SerializeField] private Animator anim;
     [SerializeField] private Transform visualsTransform; 
@@ -36,6 +66,7 @@ public class PlayerCombat : MonoBehaviour
     private float lastAttackStartTime; 
     private float lastAttackEndTime;   
     private bool isAttacking = false;
+    private bool isFacingRight = true; 
     private Coroutine lungeCoroutine;
     private Coroutine recoveryCoroutine;
 
@@ -43,8 +74,6 @@ public class PlayerCombat : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         cam = Camera.main;
-        
-        // Ensure root player scale is ALWAYS (1,1,1) for the WeaponPivot to work
         transform.localScale = Vector3.one;
 
         if (anim == null) anim = GetComponentInChildren<Animator>();
@@ -122,7 +151,6 @@ public class PlayerCombat : MonoBehaviour
         mousePos.z = 0;
         Vector2 dir = (mousePos - transform.position).normalized;
 
-        // FORCE FLIP AND ROTATION BEFORE ANIMATION PLAYS
         FlipCharacter(dir.x);
         RotateCurrentHitbox(dir);
 
@@ -164,10 +192,16 @@ public class PlayerCombat : MonoBehaviour
     {
         if (visualsTransform == null) return;
 
-        // Aiming RIGHT (x > 0.1) -> flip scale to -1
-        if (xDir > 0.1f) visualsTransform.localScale = new Vector3(-1, 1, 1);
-        // Aiming LEFT (x < -0.1) -> reset scale to 1 (default)
-        else if (xDir < -0.1f) visualsTransform.localScale = new Vector3(1, 1, 1);
+        if (xDir > 0.1f) 
+        {
+            visualsTransform.localScale = new Vector3(-1, 1, 1);
+            isFacingRight = true;
+        }
+        else if (xDir < -0.1f) 
+        {
+            visualsTransform.localScale = new Vector3(1, 1, 1);
+            isFacingRight = false;
+        }
     }
 
     public void EndAttackMove() 
@@ -196,14 +230,86 @@ public class PlayerCombat : MonoBehaviour
         DisableAllHitboxes();
         GameObject current = GetCurrentHitboxAnchor();
         
-        if (current != null && current.transform.childCount > 0)
+        if (current != null)
         {
-            GameObject child = current.transform.GetChild(0).gameObject;
-            child.SetActive(true);
-            
-            DamageDealer dealer = child.GetComponent<DamageDealer>();
-            if (dealer != null) dealer.ResetHitList();
+            // REAL-TIME CHECK: Calculate side based on mouse position relative to player
+            Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
+            bool aimingRight = mousePos.x >= transform.position.x;
+
+            // 1. Choose side-specific Prefab based on REAL-TIME mouse position
+            GameObject prefabToSpawn = aimingRight ? GetRightPrefab() : GetLeftPrefab();
+
+            // 2. Determine side-specific position and rotation
+            if (prefabToSpawn != null)
+            {
+                float offset = aimingRight ? GetRightOffset() : GetLeftOffset();
+                float rotation = aimingRight ? GetRightRotation() : GetLeftRotation();
+
+                Vector3 spawnPosition = current.transform.position + (current.transform.right * offset);
+                Quaternion spawnRotation = current.transform.rotation * Quaternion.Euler(0, 0, rotation);
+                
+                GameObject vfx = Instantiate(prefabToSpawn, spawnPosition, spawnRotation);
+
+                if (comboStep == 3)
+                {
+                    vfx.transform.localScale *= 1.5f;
+                }
+            }
+
+            // 3. Enable physical damage hitbox
+            if (current.transform.childCount > 0)
+            {
+                GameObject child = current.transform.GetChild(0).gameObject;
+                child.SetActive(true);
+                
+                DamageDealer dealer = child.GetComponent<DamageDealer>();
+                if (dealer != null) dealer.ResetHitList();
+            }
         }
+    }
+
+    // --- SEPARATED SIDE LOGIC HELPERS ---
+
+    private GameObject GetRightPrefab()
+    {
+        if (comboStep == 1) return splashRight1;
+        if (comboStep == 2) return splashRight2;
+        return splashRight3;
+    }
+
+    private GameObject GetLeftPrefab()
+    {
+        if (comboStep == 1) return splashLeft1;
+        if (comboStep == 2) return splashLeft2;
+        return splashLeft3;
+    }
+
+    private float GetRightOffset()
+    {
+        if (comboStep == 1) return offsetRight1;
+        if (comboStep == 2) return offsetRight2;
+        return offsetRight3;
+    }
+
+    private float GetLeftOffset()
+    {
+        if (comboStep == 1) return offsetLeft1;
+        if (comboStep == 2) return offsetLeft2;
+        return offsetLeft3;
+    }
+
+    private float GetRightRotation()
+    {
+        if (comboStep == 1) return rotationRight1;
+        if (comboStep == 2) return rotationRight2;
+        return rotationRight3;
+    }
+
+    private float GetLeftRotation()
+    {
+        if (comboStep == 1) return rotationLeft1;
+        if (comboStep == 2) return rotationLeft2;
+        return rotationLeft3;
     }
 
     public void DisableAllHitboxes() 

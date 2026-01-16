@@ -4,11 +4,14 @@ using System.Collections;
 public class DamageFlash : MonoBehaviour
 {
     [Header("Fade Settings")]
-    public float flashDuration = 0.15f; // Thời gian dài hơn một chút để thấy rõ fade
+    public float flashDuration = 0.15f; 
     [Range(0, 1)] public float maxFlashAmount = 0.9f; 
 
     private SpriteRenderer[] spriteRenderers;
     private MaterialPropertyBlock propBlock;
+
+    // --- NEW PROPERTY: This allows other scripts to check the flash status ---
+    public bool IsFlashing { get; private set; } 
 
     void Awake()
     {
@@ -24,16 +27,15 @@ public class DamageFlash : MonoBehaviour
 
     private IEnumerator FlashRoutine()
     {
+        IsFlashing = true; // State is now active
         float elapsed = 0f;
 
         while (elapsed < flashDuration)
         {
-            elapsed += Time.unscaledDeltaTime; // Dùng unscaled để mượt khi hitstop
+            elapsed += Time.unscaledDeltaTime; 
 
-            // Tính toán độ trắng giảm dần từ 0.9 về 0
             float currentAmount = Mathf.Lerp(maxFlashAmount, 0f, elapsed / flashDuration);
 
-            // Cập nhật giá trị vào Shader mà không cần tạo Material mới (tối ưu hiệu năng)
             foreach (var sr in spriteRenderers)
             {
                 sr.GetPropertyBlock(propBlock);
@@ -44,16 +46,17 @@ public class DamageFlash : MonoBehaviour
             yield return null;
         }
 
-        // Đảm bảo kết thúc trả về 0
         SetFlashAmount(0);
+        IsFlashing = false; // State is now inactive
     }
-public void FlashIndefinitely() 
-{
-    StopAllCoroutines(); // Stops the FlashRoutine from fading the color back to normal
-    
-    // Forces the shader to stay at the maximum flash amount
-    SetFlashAmount(maxFlashAmount); 
-}
+
+    public void FlashIndefinitely() 
+    {
+        StopAllCoroutines();
+        IsFlashing = true; 
+        SetFlashAmount(maxFlashAmount); 
+    }
+
     private void SetFlashAmount(float amount)
     {
         foreach (var sr in spriteRenderers)
