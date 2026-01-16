@@ -1,0 +1,226 @@
+using UnityEngine;
+using System.Collections;
+
+public class ChargeEnemyAI : MonoBehaviour
+{
+    private enum State { Chasing, Telegraphing, Charging, Cooldown }
+    [SerializeField] private State currentState = State.Chasing;
+
+    [Header("Visuals")]
+    public GameObject exclamationMark; 
+
+    [Header("Detection Settings")]
+    public float chargeRange = 5f;
+    public LayerMask obstacleLayer;
+    public string enemyLayerName = "Enemy"; 
+
+    [Header("Damage Settings")]
+    public float damage = 15f;
+
+    [Header("Movement Settings")]
+    public float walkSpeed = 3f;
+    public float chargeSpeed = 12f;
+    public float chargeDuration = 0.8f;
+    public float postChargeWait = 1f;
+
+    [Header("Bounce Settings")]
+    public float bounceForce = 5f; 
+    public float bounceDuration = 0.1f; 
+
+    [Header("Telegraph Line Settings")]
+    public Color lineColor = Color.red;
+    [Range(0, 1)] public float lineOpacity = 0.5f;
+    public float lineExtendSpeed = 2f; 
+    public float lineWidth = 0.05f;
+    public string lineSortingLayer = "Default"; 
+    public int lineSortingOrder = 10;
+    public float maxLineLength = 10f;
+    public Vector2 lineOffset; 
+    public float preChargeWait = 0.3f; 
+
+    private EnemyPathfinding motor;
+    private Rigidbody2D rb; 
+    private Animator anim; 
+    private Transform player;
+    private LineRenderer lineRenderer;
+    private Enemy_Health health; // Added for knockback check
+    private Vector2 chargeDirection;
+    private float stateTimer;
+
+    private void Start() {
+        motor = GetComponent<EnemyPathfinding>();
+        rb = GetComponent<Rigidbody2D>(); 
+        anim = GetComponent<Animator>(); 
+        health = GetComponent<Enemy_Health>(); // Initialize health reference
+        
+        if (rb != null) {
+            rb.freezeRotation = true;
+            rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        }
+
+        lineRenderer = GetComponent<LineRenderer>();
+        if (lineRenderer == null) lineRenderer = gameObject.AddComponent<LineRenderer>();
+        SetupLine();
+
+        if (exclamationMark != null) exclamationMark.SetActive(false);
+
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null) player = playerObj.transform;
+    }
+
+    private void SetupLine() {
+        lineRenderer.startWidth = lineWidth;
+        lineRenderer.endWidth = lineWidth;
+        lineRenderer.positionCount = 2;
+        lineRenderer.enabled = false;
+        lineRenderer.useWorldSpace = true;
+        lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        lineRenderer.sortingLayerName = lineSortingLayer;
+        lineRenderer.sortingOrder = lineSortingOrder;
+    }
+
+    private void FixedUpdate() {
+        // Pause movement during knockback
+        if (health != null && health.IsKnockedBack()) return;
+
+        if (currentState == State.Charging && rb != null) {
+            rb.velocity = chargeDirection * chargeSpeed;
+        }
+    }
+
+    private void Update() {
+        if (player == null || motor == null) return;
+
+        // --- KNOCKBACK CHECK ---
+        // Pause the AI state machine while reeling from a hit
+        if (health != null && health.IsKnockedBack()) return;
+
+        switch (currentState) {
+            case State.Chasing:
+                HandleChasing();
+                break;
+            case State.Charging:
+                stateTimer -= Time.deltaTime;
+                if (stateTimer <= 0) StartCoroutine(HandleCleanStop()); 
+                break;
+        }
+    }
+
+    private void HandleChasing() {
+        float dist = Vector2.Distance(transform.position, player.position);
+        Vector2 dir = (player.position - transform.position).normalized;
+        motor.SetMoveDir(dir);
+        motor.SetMoveSpeed(walkSpeed);
+
+        if (dist <= chargeRange && CheckLineOfSight()) {
+            StartCoroutine(TelegraphSequence());
+        }
+    }
+
+    private IEnumerator TelegraphSequence() {
+        currentState = State.Telegraphing;
+        motor.SetMoveDir(Vector2.zero); 
+        motor.FlipToTarget(player.position.x);
+
+        if (exclamationMark != null) exclamationMark.SetActive(true);
+
+        float flipMultiplier = (GetComponent<SpriteRenderer>().flipX) ? -1 : 1;
+        Vector3 startPos = transform.position + new Vector3(lineOffset.x * flipMultiplier, lineOffset.y, 0);
+        
+        chargeDirection = (player.position - startPos).normalized;
+        Vector3 lockedTargetPos = startPos + (Vector3)(chargeDirection * maxLineLength);
+
+        Color finalColor = lineColor;
+        finalColor.a = lineOpacity;
+        lineRenderer.startColor = finalColor;
+        lineRenderer.endColor = finalColor;
+        
+        lineRenderer.enabled = true;
+        float progress = 0;
+
+        while (progress < 1f) {
+            // Check for knockback during telegraph to pause line extension
+            if (health != null && health.IsKnockedBack()) {
+                yield return null;
+                continue;
+            }
+
+            progress += Time.deltaTime * lineExtendSpeed;
+            lineRenderer.SetPosition(0, startPos);
+            lineRenderer.SetPosition(1, Vector3.Lerp(startPos, lockedTargetPos, progress));
+            yield return null;
+        }
+
+        yield return new WaitForSeconds(preChargeWait);
+        
+        if (exclamationMark != null) exclamationMark.SetActive(false);
+        lineRenderer.enabled = false;
+        if (anim != null) anim.SetTrigger("Charge"); 
+        
+        Physics2D.IgnoreLayerCollision(gameObject.layer, LayerMask.NameToLayer(enemyLayerName), true);
+        
+        currentState = State.Charging;
+        stateTimer = chargeDuration;
+    }
+
+    private IEnumerator HandleCleanStop() {
+        if (currentState == State.Cooldown) yield break;
+        currentState = State.Cooldown;
+
+        Physics2D.IgnoreLayerCollision(gameObject.layer, LayerMask.NameToLayer(enemyLayerName), false);
+
+        // FIX: Stop movement without disabling collision physics
+        if (rb != null) rb.velocity = Vector2.zero;
+        if (motor != null) motor.StopMoving();
+
+        yield return new WaitForSeconds(postChargeWait);
+
+        currentState = State.Chasing;
+    }
+
+    private IEnumerator HandleBounceStop(Vector2 collisionPoint) {
+        if (currentState == State.Cooldown) yield break;
+        currentState = State.Cooldown;
+
+        Physics2D.IgnoreLayerCollision(gameObject.layer, LayerMask.NameToLayer(enemyLayerName), false);
+
+        if (rb != null) {
+            Vector2 recoilDir = ((Vector2)transform.position - collisionPoint).normalized;
+            rb.velocity = recoilDir * bounceForce;
+            yield return new WaitForSeconds(bounceDuration);
+            rb.velocity = Vector2.zero;
+            // REMOVED: rb.simulated = false so enemy remains hittable
+        }
+
+        yield return new WaitForSeconds(postChargeWait);
+
+        currentState = State.Chasing;
+    }
+
+    private bool CheckLineOfSight() {
+        Vector2 dir = (player.position - transform.position).normalized;
+        float dist = Vector2.Distance(transform.position, player.position);
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, dir, dist, obstacleLayer);
+        return hit.collider == null;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision) {
+        if (currentState != State.Charging) return;
+
+        Vector2 hitPoint = collision.contacts[0].point;
+
+        if (collision.gameObject.CompareTag("Player")) {
+            PlayerStats stats = collision.gameObject.GetComponent<PlayerStats>();
+            if (stats != null) stats.TakeDamage(damage);
+            StartCoroutine(HandleBounceStop(hitPoint));
+        }
+        else if (((1 << collision.gameObject.layer) & obstacleLayer) != 0) {
+            StartCoroutine(HandleBounceStop(hitPoint));
+        }
+    }
+
+    private void OnDisable() {
+        if (lineRenderer != null) lineRenderer.enabled = false;
+        Physics2D.IgnoreLayerCollision(gameObject.layer, LayerMask.NameToLayer(enemyLayerName), false);
+    }
+}

@@ -10,12 +10,26 @@ public class Player_Energy : MonoBehaviour
 
     void Start()
     {
+        // --- AUTO-FIND LOGIC START ---
+        // If the energyBar is not assigned (which happens with Prefabs), 
+        // find the GameObject named "energybar" in the scene.
+        if (energyBar == null)
+        {
+            GameObject foundObj = GameObject.Find("energybar");
+            if (foundObj != null)
+            {
+                energyBar = foundObj.GetComponent<Slider>();
+            }
+        }
+        // --- AUTO-FIND LOGIC END ---
+
         currentEnergy = 0;
 
         if (energyBar != null)
         {
             energyBar.minValue = 0;
             energyBar.maxValue = maxEnergy;
+            energyBar.value = currentEnergy; // Sync the slider value immediately
         }
 
         UpdateUI();

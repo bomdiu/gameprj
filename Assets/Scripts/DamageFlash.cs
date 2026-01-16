@@ -3,35 +3,67 @@ using System.Collections;
 
 public class DamageFlash : MonoBehaviour
 {
-    public Color flashColor = Color.red;
-    public float flashDuration = 0.1f; 
+    [Header("Fade Settings")]
+    public float flashDuration = 0.15f; 
+    [Range(0, 1)] public float maxFlashAmount = 0.9f; 
 
-    private SpriteRenderer spriteRenderer;
-    private Color originalColor;
+    private SpriteRenderer[] spriteRenderers;
+    private MaterialPropertyBlock propBlock;
+
+    // --- NEW PROPERTY: This allows other scripts to check the flash status ---
+    public bool IsFlashing { get; private set; } 
 
     void Awake()
     {
-        // Tìm SpriteRenderer ở cả cha và các object con
-        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        if (spriteRenderer != null)
-        {
-            originalColor = spriteRenderer.color;
-        }
+        spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        propBlock = new MaterialPropertyBlock();
     }
 
     public void Flash()
     {
-        if (spriteRenderer == null) return;
-
-        Debug.Log("Flash đã được kích hoạt!"); // Dòng này sẽ hiện trong Console
-        StopAllCoroutines(); 
+        StopAllCoroutines();
         StartCoroutine(FlashRoutine());
     }
 
     private IEnumerator FlashRoutine()
     {
-        spriteRenderer.color = flashColor;
-        yield return new WaitForSeconds(flashDuration);
-        spriteRenderer.color = originalColor;
+        IsFlashing = true; // State is now active
+        float elapsed = 0f;
+
+        while (elapsed < flashDuration)
+        {
+            elapsed += Time.unscaledDeltaTime; 
+
+            float currentAmount = Mathf.Lerp(maxFlashAmount, 0f, elapsed / flashDuration);
+
+            foreach (var sr in spriteRenderers)
+            {
+                sr.GetPropertyBlock(propBlock);
+                propBlock.SetFloat("_FlashAmount", currentAmount);
+                sr.SetPropertyBlock(propBlock);
+            }
+
+            yield return null;
+        }
+
+        SetFlashAmount(0);
+        IsFlashing = false; // State is now inactive
+    }
+
+    public void FlashIndefinitely() 
+    {
+        StopAllCoroutines();
+        IsFlashing = true; 
+        SetFlashAmount(maxFlashAmount); 
+    }
+
+    private void SetFlashAmount(float amount)
+    {
+        foreach (var sr in spriteRenderers)
+        {
+            sr.GetPropertyBlock(propBlock);
+            propBlock.SetFloat("_FlashAmount", amount);
+            sr.SetPropertyBlock(propBlock);
+        }
     }
 }
