@@ -12,9 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7159c9fb9cc23344292613e2152a9be2, type: 3}
   m_Name: Summon_Data
   m_EditorClassIdentifier: 
-  minionPrefab: {fileID: 0}
-  minionCount: 3
-  spawnRadius: 3
-  castTime: 1.5
+  minionWaves:
+  - name: 
+    prefab: {fileID: 194198021288000057, guid: b78671c6c4d9ec240a61386cd2c23c1f, type: 3}
+    count: 2
+  - name: 
+    prefab: {fileID: 9157198380874731861, guid: 86e19ac74ba67e5418bd39a7ce0b70e9, type: 3}
+    count: 2
+  spawnRadius: 4
+  totalCastDuration: 6
   recoverTime: 2
-  autoCooldown: 10
+  autoCooldown: 15
+  indicatorLifeTime: 1
+  spawnDelay: 0.5
