@@ -2,18 +2,38 @@ using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
-    public float speed = 20f;      // 🚀 tốc độ cao
-    public int damage = 3;
+    [Header("Movement Settings")]
+    public float speed = 20f;
     public float lifeTime = 2f;
+    public Vector2 moveDir;
+
+    [Header("Combat Settings")]
+    public int damage = 3;
     public LayerMask enemyLayer;
 
-    private Vector2 moveDir;
+    [Header("Visual Settings")]
+    public string sortingLayerName = "Projectiles"; // Change this in the Inspector
+    public int sortingOrder = 10;
+
+    private SpriteRenderer sr;
+
+    private void Awake()
+    {
+        sr = GetComponent<SpriteRenderer>();
+    }
 
     public void Init(Vector2 dir)
     {
         moveDir = dir.normalized;
 
-        // Xoay đạn theo hướng bay (nếu có sprite)
+        // Apply Sorting Layer settings
+        if (sr != null)
+        {
+            sr.sortingLayerName = sortingLayerName;
+            sr.sortingOrder = sortingOrder;
+        }
+
+        // Rotate bullet to face movement direction
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(0, 0, angle);
 
@@ -29,8 +49,8 @@ public class Bullet : MonoBehaviour
     {
         if (((1 << other.gameObject.layer) & enemyLayer) != 0)
         {
-            other.GetComponent<Enemy_Health>()
-                 ?.ChangeHealth(-damage);
+            // Trigger the damage logic on the enemy
+            other.GetComponent<Enemy_Health>()?.ChangeHealth(-damage);
 
             Destroy(gameObject);
         }

@@ -1953,6 +1953,7 @@ GameObject:
   - component: {fileID: 464862099}
   - component: {fileID: 464862101}
   - component: {fileID: 464862100}
+  - component: {fileID: 464862102}
   m_Layer: 5
   m_Name: HealthBarFrame
   m_TagString: Untagged
@@ -2019,6 +2020,20 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 464862098}
   m_CullTransparentMesh: 1
+--- !u!114 &464862102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 464862098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9394ae083d560a1479f12e862005da76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  healthFillImage: {fileID: 0}
+  hpText: {fileID: 0}
 --- !u!1 &470216213
 GameObject:
   m_ObjectHideFlags: 0
@@ -2312,6 +2327,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 40604378781748874, guid: 024e3f9294aee0e4bb787ef276dcca42, type: 3}
+      propertyPath: healthBarScript
+      value: 
+      objectReference: {fileID: 0}
     - target: {fileID: 6688389251094063780, guid: 024e3f9294aee0e4bb787ef276dcca42, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.12457101
@@ -2356,6 +2375,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 8280560013336057596, guid: 024e3f9294aee0e4bb787ef276dcca42, type: 3}
+      propertyPath: healthBarUI
+      value: 
+      objectReference: {fileID: 464862102}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4546,7 +4569,7 @@ GameObject:
   - component: {fileID: 1016911446}
   - component: {fileID: 1016911447}
   m_Layer: 5
-  m_Name: UI Manager
+  m_Name: healthbar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
