@@ -15,6 +15,12 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float comboWindow = 0.8f;   
     [SerializeField] private float recoveryTime = 0.1f; 
 
+    [Header("Input Buffering")]
+    [Tooltip("How close to the end of an animation can the player 'queue' the next hit?")]
+    [SerializeField] private float bufferWindow = 0.25f; 
+    private bool hasBufferedInput = false;
+    private float lastBufferedTime;
+
     [Header("Lunge Settings")]
     [SerializeField] private float lungeDistance = 3.0f;      
     [SerializeField] private float finalLungeDistance = 5.0f; 
@@ -56,7 +62,7 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float rotationLeft3 = 0f;
 
     [Header("References")]
-    [SerializeField] private Animator anim;
+    [SerializeField] public Animator anim;
     [SerializeField] private Transform visualsTransform; 
     [SerializeField] private PlayerMovement movement;
     private Rigidbody2D rb;
@@ -95,30 +101,62 @@ public class PlayerCombat : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0)) HandleInput();
 
+        // Safety check to end attack if animator is in Idle/Walk
         if (isAttacking && Time.time - lastAttackStartTime > 0.05f) 
         {
             AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
             if (state.IsName("Idle") || state.IsName("Walk")) EndAttackMove();
         }
 
-        if (!isAttacking && comboStep > 0 && Time.time - lastAttackEndTime > comboWindow)
+        // --- NEW: COOLDOWN ENFORCEMENT ---
+        // If we are NOT attacking, constantly check if there is a buffer ready to fire
+        if (!isAttacking)
         {
-            comboStep = 0;
+            TryExecuteBufferedAttack();
+            
+            // Reset combo if the window expires
+            if (comboStep > 0 && Time.time - lastAttackEndTime > comboWindow)
+            {
+                comboStep = 0;
+            }
         }
     }
 
     private void HandleInput()
     {
-        float currentCooldown = GetCurrentCooldown();
-        if (isAttacking)
+        // Record intent
+        hasBufferedInput = true;
+        lastBufferedTime = Time.time;
+
+        // Try to execute immediately if we are idle
+        if (!isAttacking)
         {
-            if (Time.time - lastAttackStartTime > currentCooldown) PrepareAttack();
+            TryExecuteBufferedAttack();
         }
-        else if (Time.time - lastAttackEndTime > currentCooldown) PrepareAttack();
+    }
+
+    private void TryExecuteBufferedAttack()
+    {
+        if (!hasBufferedInput) return;
+
+        // Discard buffer if it's older than the window
+        if (Time.time - lastBufferedTime > bufferWindow)
+        {
+            hasBufferedInput = false;
+            return;
+        }
+
+        // EXCLUSIVE CHECK: Only fire if enough time has passed since the LAST attack ended
+        float currentCooldown = GetCurrentCooldown();
+        if (Time.time - lastAttackEndTime >= currentCooldown)
+        {
+            PrepareAttack();
+        }
     }
 
     private float GetCurrentCooldown()
     {
+        // These are the delays required BEFORE starting the next hit
         if (comboStep == 1) return cooldown1to2;
         if (comboStep == 2) return cooldown2to3;
         return cooldown3to1;
@@ -126,10 +164,13 @@ public class PlayerCombat : MonoBehaviour
 
     private void PrepareAttack()
     {
+        hasBufferedInput = false; // Buffer successfully used
+
         if (lungeCoroutine != null) StopCoroutine(lungeCoroutine);
         if (recoveryCoroutine != null) StopCoroutine(recoveryCoroutine);
         
-        bool inComboChain = isAttacking || (Time.time - lastAttackEndTime <= comboWindow);
+        // Step forward in the combo chain
+        bool inComboChain = (Time.time - lastAttackEndTime <= comboWindow);
         comboStep = (inComboChain && comboStep < 3) ? comboStep + 1 : 1;
 
         ExecuteAttack();
@@ -208,13 +249,15 @@ public class PlayerCombat : MonoBehaviour
     { 
         if (!isAttacking) return;
         isAttacking = false;
-        lastAttackEndTime = Time.time; 
+        lastAttackEndTime = Time.time; // Mark the end of this animation
         
         if (lungeCoroutine != null) StopCoroutine(lungeCoroutine);
         rb.velocity = Vector2.zero;
         
         DisableAllHitboxes();
 
+        // FIXED: Do not call PrepareAttack here. 
+        // TryExecuteBufferedAttack in the Update loop will handle it once the cooldown is ready.
         if (recoveryCoroutine != null) StopCoroutine(recoveryCoroutine);
         recoveryCoroutine = StartCoroutine(RecoveryRoutine());
     }
@@ -232,14 +275,11 @@ public class PlayerCombat : MonoBehaviour
         
         if (current != null)
         {
-            // REAL-TIME CHECK: Calculate side based on mouse position relative to player
             Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
             bool aimingRight = mousePos.x >= transform.position.x;
 
-            // 1. Choose side-specific Prefab based on REAL-TIME mouse position
             GameObject prefabToSpawn = aimingRight ? GetRightPrefab() : GetLeftPrefab();
 
-            // 2. Determine side-specific position and rotation
             if (prefabToSpawn != null)
             {
                 float offset = aimingRight ? GetRightOffset() : GetLeftOffset();
@@ -256,7 +296,6 @@ public class PlayerCombat : MonoBehaviour
                 }
             }
 
-            // 3. Enable physical damage hitbox
             if (current.transform.childCount > 0)
             {
                 GameObject child = current.transform.GetChild(0).gameObject;
@@ -267,8 +306,6 @@ public class PlayerCombat : MonoBehaviour
             }
         }
     }
-
-    // --- SEPARATED SIDE LOGIC HELPERS ---
 
     private GameObject GetRightPrefab()
     {

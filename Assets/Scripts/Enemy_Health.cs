@@ -105,7 +105,6 @@ public class Enemy_Health : MonoBehaviour
         ApplyAutoKnockback();
     }
 
-    // --- FIX: UPDATED DIE FUNCTION ---
     void Die()
     {
         if (isDead) return;
@@ -117,10 +116,13 @@ public class Enemy_Health : MonoBehaviour
             sr.sortingLayerName = deathSortingLayer;
         }
 
-        // 2. DISABLE COLLIDER IMMEDIATELY
-        // This is what allows bullets to go through and prevents pushing other enemies
-        Collider2D col = GetComponent<Collider2D>();
-        if (col != null) col.enabled = false;
+        // 2. CONFIGURE COLLISION FOR DEATH
+        // We keep the collider active to hit Obstacles but ignore Player/Enemies
+        int playerLayer = LayerMask.NameToLayer("Player");
+        int enemyLayer = LayerMask.NameToLayer("Enemy"); 
+        
+        if (playerLayer != -1) Physics2D.IgnoreLayerCollision(gameObject.layer, playerLayer, true);
+        if (enemyLayer != -1) Physics2D.IgnoreLayerCollision(gameObject.layer, enemyLayer, true);
 
         // Shutdown Brain/AI
         MonoBehaviour[] scripts = GetComponents<MonoBehaviour>();
@@ -132,11 +134,9 @@ public class Enemy_Health : MonoBehaviour
         StartCoroutine(DeathSequenceRoutine());
     }
 
-    // --- FIX: UPDATED DEATH SEQUENCE ---
     private IEnumerator DeathSequenceRoutine()
     {
         // 3. INITIAL EXPLOSIVE VELOCITY
-        // Still works because rb.simulated is true here
         GameObject player = GameObject.FindWithTag("Player");
         if (player != null && rb != null)
         {
@@ -149,24 +149,22 @@ public class Enemy_Health : MonoBehaviour
 
         // 4. DECREASE VELOCITY OVER TIME
         float elapsed = 0f;
-        Vector2 initialVelocity = rb.velocity;
-
         while (elapsed < deathKnockbackDuration)
         {
             elapsed += Time.deltaTime;
+            // Velocity is lerped, but rb.simulated remains true so it hits walls
             if (rb != null)
             {
-                rb.velocity = Vector2.Lerp(initialVelocity, Vector2.zero, elapsed / deathKnockbackDuration);
+                rb.velocity = Vector2.Lerp(rb.velocity, Vector2.zero, Time.deltaTime * (1f / deathKnockbackDuration));
             }
             yield return null;
         }
 
-        // 5. COMPLETE STOP & FREEZE
-        // Now we turn off simulation after the movement animation is done
+        // 5. STOP MOVEMENT
+        // Simulation stays on so the enemy doesn't clip through obstacles if it hit one
         if (rb != null)
         {
             rb.velocity = Vector2.zero;
-            rb.simulated = false; 
         }
 
         if (morphCoroutine != null) StopCoroutine(morphCoroutine);
@@ -179,10 +177,16 @@ public class Enemy_Health : MonoBehaviour
         if (HitStopManager.Instance != null) HitStopManager.Instance.HitStop(deathHitstop);
 
         if (WaveManager.Instance != null) WaveManager.Instance.OnEnemyKilled();
+        
+        // Reset layer collisions before destruction to maintain global physics integrity
+        int playerLayer = LayerMask.NameToLayer("Player");
+        int enemyLayer = LayerMask.NameToLayer("Enemy");
+        if (playerLayer != -1) Physics2D.IgnoreLayerCollision(gameObject.layer, playerLayer, false);
+        if (enemyLayer != -1) Physics2D.IgnoreLayerCollision(gameObject.layer, enemyLayer, false);
+
         Destroy(gameObject); 
     }
 
-    // --- REMAINING FUNCTIONS UNCHANGED ---
     private void ApplyMorphEffect()
     {
         if (morphCoroutine != null) StopCoroutine(morphCoroutine);

@@ -71,7 +71,7 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: -520290631
-  m_SortingLayer: -1
+  m_SortingLayer: -2
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 474a2498079ae2b4e8f2ceab4a5de6ac, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 0.39215687}
@@ -210,18 +210,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6be1e4af08e2e3e47b4a74b00bc1f48b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 50
-  deathSortingLayer: UI
+  maxHealth: 40
+  deathSortingLayer: Deatheffect
   damageTextPrefab: {fileID: 8110601638250219120, guid: a12e825899b06414d8893e0404a71d10, type: 3}
   energyReward: 10
-  hitstopDuration: 0.05
+  hitstopDuration: 0
   knockbackForce: 1.45
   knockbackStunTime: 0.15
   squashScale: {x: 1, y: 1.2, z: 1}
   squashHoldDuration: 0.05
   morphRestoreSpeed: 8
   deathParticlePrefab: {fileID: 5744155556297248092, guid: 54233372e8c073e4aab2d9ec523963a0, type: 3}
-  deathHitstop: 0.05
+  deathHitstop: 0
   deathDestroyDelay: 0.5
   deathSquashScale: {x: 1.4, y: 0.8, z: 1}
   deathStartVelocity: 10
@@ -303,11 +303,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentState: 0
-  detectionRange: 1000
+  detectionRange: 10000
   fuseRange: 1
-  chaseSpeed: 1
-  fuseTime: 0.8
-  explosionRadius: 0.99
+  chaseSpeed: 2
+  fuseTime: 0.5
+  explosionRadius: 1.72
   explosionDamage: 25
   explosionKnockbackForce: 10
   visualExplosionOffset: {x: 0, y: -0.1}
@@ -318,7 +318,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   explosionEffect: {fileID: 6187875929811096851, guid: b502df0fed4577a429ab2769a16e0483, type: 3}
-  explosionSortingLayer: VFX
+  explosionSortingLayer: Default
   maxScaleMultiplier: 1.4
   pulseSpeed: 87.8
   recoverySpeed: 4
@@ -338,7 +338,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
+  m_Mass: 13
   m_LinearDrag: 0
   m_AngularDrag: 0.05
   m_GravityScale: 0
@@ -430,6 +430,10 @@ PrefabInstance:
     - target: {fileID: 2308352800794302360, guid: 8d49024b44572a84087b2c5109b66d4a, type: 3}
       propertyPath: m_Name
       value: ExclamationMark
+      objectReference: {fileID: 0}
+    - target: {fileID: 2308352800794302360, guid: 8d49024b44572a84087b2c5109b66d4a, type: 3}
+      propertyPath: m_Layer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2308352800794302360, guid: 8d49024b44572a84087b2c5109b66d4a, type: 3}
       propertyPath: m_IsActive

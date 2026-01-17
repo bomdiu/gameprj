@@ -12,7 +12,8 @@ GameObject:
   - component: {fileID: 433936026465868746}
   - component: {fileID: 2259396426882042453}
   - component: {fileID: 8939073195731178421}
-  m_Layer: 0
+  - component: {fileID: 3940859161218205833}
+  m_Layer: 10
   m_Name: fish
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -73,7 +74,7 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: -1830961271
-  m_SortingLayer: 3
+  m_SortingLayer: 4
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 9d130320190492448846eb2c045da202, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -143,3 +144,25 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1, y: 0.5815745}
   m_EdgeRadius: 0
+--- !u!114 &3940859161218205833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6195271247889426646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d2d3b2ff01a95347a9e9a1dba31e335, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  speed: 14
+  lifetime: 2.5
+  explosionRadius: 3.5
+  directHitDamage: 60
+  maxExplosionDamage: 40
+  knockbackForce: 18
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  explosionVFX: {fileID: 6187875929811096851, guid: b502df0fed4577a429ab2769a16e0483, type: 3}

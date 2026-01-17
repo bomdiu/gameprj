@@ -16,7 +16,7 @@ TagManager:
   - Enemy
   - Camera
   - Obstacles
-  - 
+  - Ball
   - 
   - 
   - PopUpText
@@ -45,6 +45,9 @@ TagManager:
   - name: Shadow
     uniqueID: 3774676665
     locked: 0
+  - name: Deatheffect
+    uniqueID: 3099354207
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
@@ -68,4 +71,7 @@ TagManager:
     locked: 0
   - name: DamageText
     uniqueID: 1384360559
+    locked: 0
+  - name: Obtascles
+    uniqueID: 1888978977
     locked: 0

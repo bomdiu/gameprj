@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 51070535269113703}
   - component: {fileID: 3395517150414934882}
   - component: {fileID: 47226344690638856}
-  m_Layer: 9
+  m_Layer: 0
   m_Name: Bullet
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -86,7 +86,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
-  m_SpriteSortPoint: 0
+  m_SpriteSortPoint: 1
 --- !u!50 &51070535269113703
 Rigidbody2D:
   serializedVersion: 4
@@ -167,5 +167,5 @@ MonoBehaviour:
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 512
-  sortingLayerName: EnemyProjectile
+  sortingLayerName: Default
   sortingOrder: 5

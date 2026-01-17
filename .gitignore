@@ -8,3 +8,8 @@ Logs/
 .idea/
 *.csproj
 *.sln
+UserSettings/EditorUserSettings.asset
+UserSettings/Search.index
+UserSettings/Search.settings
+UserSettings/Layouts/CurrentMaximizeLayout.dwlt
+UserSettings/Layouts/default-2022.dwlt

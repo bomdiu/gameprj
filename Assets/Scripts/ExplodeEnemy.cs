@@ -102,7 +102,7 @@ public class CreeperAI : MonoBehaviour
         motor.SetMoveDir(direction);
     }
 
-    private IEnumerator PrimingSequence()
+private IEnumerator PrimingSequence()
     {
         currentState = CreeperState.Priming;
         motor.StopMoving();
@@ -119,7 +119,6 @@ public class CreeperAI : MonoBehaviour
 
         while (timer < fuseTime)
         {
-            // Pause the fuse timer if the enemy is knocked back
             if (health != null && health.IsKnockedBack())
             {
                 yield return null;
@@ -129,11 +128,19 @@ public class CreeperAI : MonoBehaviour
             timer += Time.deltaTime;
             float progress = timer / fuseTime;
 
-            if (flashController == null || !flashController.IsFlashing)
+            // --- OVERRIDE LOGIC START ---
+            // If the DamageFlash script is currently active, we skip the blink color logic
+            if (flashController != null && flashController.IsFlashing)
             {
+                // We do nothing to the color here, allowing the DamageFlash PropertyBlock to win
+            }
+            else
+            {
+                // Damage flash is over, handle the red blinking
                 float flashValue = Mathf.PingPong(timer * 10f, 1f);
                 spriteRenderer.color = Color.Lerp(originalColor, fuseColor, flashValue);
             }
+            // --- OVERRIDE LOGIC END ---
 
             float growth = Mathf.Lerp(1f, maxScaleMultiplier, progress);
             float jitter = 1f + (Mathf.Sin(Time.time * pulseSpeed) * 0.05f * progress);
@@ -157,7 +164,6 @@ public class CreeperAI : MonoBehaviour
 
         Explode();
     }
-
     private IEnumerator RecoverSequence(Color targetColor)
     {
         currentState = CreeperState.Recovering;
