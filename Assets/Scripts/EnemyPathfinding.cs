@@ -40,6 +40,12 @@ public class EnemyPathfinding : MonoBehaviour
 
     private void FixedUpdate() 
     {
+        // NEW: Stop processing physics if speed is 0 or less (prevents sliding/bouncing)
+        if (moveSpeed <= 0 && (health == null || !health.IsKnockedBack())) 
+        {
+            return; 
+        }
+
         if (health != null && health.IsKnockedBack()) 
         {
             rb.velocity = Vector2.Lerp(rb.velocity, Vector2.zero, Time.fixedDeltaTime * 3f);
@@ -91,17 +97,13 @@ public class EnemyPathfinding : MonoBehaviour
         return avoidanceDirection * force * moveSpeed * distanceScale;
     }
 
-    // --- UPDATED ANIMATION LOGIC ---
     private void UpdateAnimation() {
         if (anim == null) return;
-
-        // Check if the "Speed" parameter exists before trying to set it
         if (HasParameter("Speed", anim)) {
             anim.SetFloat("Speed", rb.velocity.magnitude);
         }
     }
 
-    // Helper method to safely check for parameters
     private bool HasParameter(string paramName, Animator animator) {
         foreach (AnimatorControllerParameter param in animator.parameters) {
             if (param.name == paramName) return true;

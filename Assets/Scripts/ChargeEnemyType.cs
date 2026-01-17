@@ -43,7 +43,7 @@ public class ChargeEnemyAI : MonoBehaviour
     private Animator anim; 
     private Transform player;
     private LineRenderer lineRenderer;
-    private Enemy_Health health; // Added for knockback check
+    private Enemy_Health health; 
     private Vector2 chargeDirection;
     private float stateTimer;
 
@@ -51,7 +51,7 @@ public class ChargeEnemyAI : MonoBehaviour
         motor = GetComponent<EnemyPathfinding>();
         rb = GetComponent<Rigidbody2D>(); 
         anim = GetComponent<Animator>(); 
-        health = GetComponent<Enemy_Health>(); // Initialize health reference
+        health = GetComponent<Enemy_Health>(); 
         
         if (rb != null) {
             rb.freezeRotation = true;
@@ -80,10 +80,10 @@ public class ChargeEnemyAI : MonoBehaviour
     }
 
     private void FixedUpdate() {
-        // Pause movement during knockback
         if (health != null && health.IsKnockedBack()) return;
 
-        if (currentState == State.Charging && rb != null) {
+        // Apply velocity only during charge
+        if (currentState == State.Charging && rb != null && stateTimer > 0) {
             rb.velocity = chargeDirection * chargeSpeed;
         }
     }
@@ -91,8 +91,6 @@ public class ChargeEnemyAI : MonoBehaviour
     private void Update() {
         if (player == null || motor == null) return;
 
-        // --- KNOCKBACK CHECK ---
-        // Pause the AI state machine while reeling from a hit
         if (health != null && health.IsKnockedBack()) return;
 
         switch (currentState) {
@@ -101,7 +99,11 @@ public class ChargeEnemyAI : MonoBehaviour
                 break;
             case State.Charging:
                 stateTimer -= Time.deltaTime;
-                if (stateTimer <= 0) StartCoroutine(HandleCleanStop()); 
+                if (stateTimer <= 0) {
+                    if (rb != null) rb.velocity = Vector2.zero; 
+                    motor.SetMoveSpeed(0); // Tell motor to ignore physics
+                    StartCoroutine(HandleCleanStop()); 
+                }
                 break;
         }
     }
@@ -139,7 +141,6 @@ public class ChargeEnemyAI : MonoBehaviour
         float progress = 0;
 
         while (progress < 1f) {
-            // Check for knockback during telegraph to pause line extension
             if (health != null && health.IsKnockedBack()) {
                 yield return null;
                 continue;
@@ -169,12 +170,15 @@ public class ChargeEnemyAI : MonoBehaviour
 
         Physics2D.IgnoreLayerCollision(gameObject.layer, LayerMask.NameToLayer(enemyLayerName), false);
 
-        // FIX: Stop movement without disabling collision physics
-        if (rb != null) rb.velocity = Vector2.zero;
-        if (motor != null) motor.StopMoving();
+        if (rb != null) rb.velocity = Vector2.zero; 
+        if (motor != null) {
+            motor.SetMoveSpeed(0); 
+            motor.StopMoving();
+        }
 
         yield return new WaitForSeconds(postChargeWait);
 
+        motor.SetMoveSpeed(walkSpeed); 
         currentState = State.Chasing;
     }
 
@@ -189,11 +193,11 @@ public class ChargeEnemyAI : MonoBehaviour
             rb.velocity = recoilDir * bounceForce;
             yield return new WaitForSeconds(bounceDuration);
             rb.velocity = Vector2.zero;
-            // REMOVED: rb.simulated = false so enemy remains hittable
         }
 
         yield return new WaitForSeconds(postChargeWait);
 
+        motor.SetMoveSpeed(walkSpeed);
         currentState = State.Chasing;
     }
 

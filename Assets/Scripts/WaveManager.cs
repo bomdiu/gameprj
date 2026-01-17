@@ -1,125 +1,155 @@
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-
-[System.Serializable]
-public class EnemyGroup
-{
-    public string enemyName; // Tên để dễ nhớ (ví dụ: Slime)
-    public GameObject enemyPrefab; // Kéo prefab quái vào đây
-    public int enemyCount; // Số lượng cần spawn
-}
-
-[System.Serializable]
-public class Wave
-{
-    public string waveName;
-    public List<EnemyGroup> groups; // Danh sách các loại quái trong wave này
-    public List<Transform> spawnPoints; // Các điểm spawn dành riêng cho wave này
-}
 
 public class WaveManager : MonoBehaviour
 {
     public static WaveManager Instance;
 
-    [Header("Cấu hình Waves")]
-    public List<Wave> waves; // Chứa thông tin 3 đợt quái của bạn
-    public float timeBetweenWaves = 5f; // Thời gian nghỉ giữa các đợt
+    [System.Serializable]
+    public class EnemyTypeConfig
+    {
+        public GameObject prefab;
+        public int maxAmountInWave; // NEW: Limit how many of THIS specific enemy can spawn
+        [HideInInspector] public int currentSpawnedCount; // Tracks current wave total
+    }
 
-    [Header("Phần thưởng")]
-    public GameObject rewardItemPrefab; // Prefab cái rương/item rơi ra
-    public Transform rewardSpawnPoint; // Vị trí rương sẽ rơi
+    [System.Serializable]
+    public class WaveData
+    {
+        public string waveName;
+        public List<EnemyTypeConfig> enemyConfigs; // NEW: Config for each enemy type
+        public int totalEnemyCount;               // Total enemies for the whole wave
+        public float timeBetweenSpawns;    
+    }
 
-    private int currentWaveIndex = 0;
-    private int enemiesRemaining = 0; // Đếm số quái đang sống
-    private bool isWaveActive = false;
+    [Header("Wave Configuration")]
+    public List<WaveData> waves; 
+    public float timeBetweenWaves = 5f;
+    
+    [Header("Spawn Settings")]
+    public float spawnRadius = 10f;
+    public float minSpawnDistance = 3f; 
+    public LayerMask obstacleLayer;      
+    public GameObject spawnEffectPrefab; 
+    public float effectDuration = 1.0f;  
+    
+    [Header("Live Tracking")]
+    [SerializeField] private int currentWaveIndex = 0;
+    [SerializeField] private int enemiesAlive;
+
+    private Transform player;
 
     private void Awake()
     {
-        Instance = this;
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
     private void Start()
     {
-        // Bắt đầu wave đầu tiên ngay khi vào game (hoặc gọi hàm này khi bạn muốn)
-        StartCoroutine(StartNextWave(0));
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null) player = playerObj.transform;
+
+        StartCoroutine(StartWaveSystem());
     }
 
-    IEnumerator StartNextWave(int index)
+    private IEnumerator StartWaveSystem()
     {
-        yield return new WaitForSeconds(2f); // Chờ xíu cho người chơi chuẩn bị
-
-        if (index >= waves.Count)
+        while (currentWaveIndex < waves.Count)
         {
-            // HẾT GAME / CHIẾN THẮNG
-            Debug.Log("Đã clear hết mọi wave!");
-            SpawnReward();
-            yield break;
-        }
+            // Reset per-enemy counters for the new wave
+            foreach(var config in waves[currentWaveIndex].enemyConfigs) config.currentSpawnedCount = 0;
 
-        Debug.Log("Bắt đầu Wave: " + (index + 1));
-        currentWaveIndex = index;
-        SpawnWave(waves[index]);
-    }
-
-    void SpawnWave(Wave wave)
-    {
-        isWaveActive = true;
-        enemiesRemaining = 0;
-
-        // 1. Tính tổng số quái để theo dõi
-        foreach (var group in wave.groups)
-        {
-            enemiesRemaining += group.enemyCount;
-        }
-
-        // 2. Spawn từng loại quái
-        foreach (var group in wave.groups)
-        {
-            for (int i = 0; i < group.enemyCount; i++)
-            {
-                SpawnEnemy(group.enemyPrefab, wave.spawnPoints);
-            }
-        }
-    }
-
-    void SpawnEnemy(GameObject prefab, List<Transform> points)
-    {
-        if (points.Count == 0) return;
-
-        // Chọn ngẫu nhiên 1 điểm trong danh sách spawnpoint của wave đó
-        int randomIndex = Random.Range(0, points.Count);
-        Transform spawnPoint = points[randomIndex];
-
-        // Sinh ra quái
-        Instantiate(prefab, spawnPoint.position, Quaternion.identity);
-    }
-
-    // --- HÀM NÀY ĐỂ QUÁI GỌI KHI CHẾT ---
-    public void OnEnemyKilled()
-    {
-        if (!isWaveActive) return;
-
-        enemiesRemaining--;
-        Debug.Log("Quái chết! Còn lại: " + enemiesRemaining);
-
-        if (enemiesRemaining <= 0)
-        {
-            // Clear xong wave hiện tại
-            Debug.Log("Wave Clear!");
-            isWaveActive = false;
+            yield return StartCoroutine(SpawnWave(waves[currentWaveIndex]));
             
-            // Chuyển sang wave tiếp theo
-            StartCoroutine(StartNextWave(currentWaveIndex + 1));
+            while (enemiesAlive > 0) yield return new WaitForSeconds(0.5f);
+
+            currentWaveIndex++;
+            yield return new WaitForSeconds(timeBetweenWaves);
         }
     }
 
-    void SpawnReward()
+    private IEnumerator SpawnWave(WaveData wave)
     {
-        if (rewardItemPrefab != null)
+        for (int i = 0; i < wave.totalEnemyCount; i++)
         {
-            Instantiate(rewardItemPrefab, rewardSpawnPoint.position, Quaternion.identity);
-            Debug.Log("Rơi vật phẩm nâng cấp!");
+            SpawnEnemy(wave);
+            yield return new WaitForSeconds(wave.timeBetweenSpawns);
         }
+    }
+
+    private void SpawnEnemy(WaveData wave)
+    {
+        if (player == null) return;
+
+        // Filter enemies that haven't hit their max count yet
+        List<EnemyTypeConfig> validEnemies = new List<EnemyTypeConfig>();
+        foreach (var config in wave.enemyConfigs)
+        {
+            if (config.currentSpawnedCount < config.maxAmountInWave)
+                validEnemies.Add(config);
+        }
+
+        if (validEnemies.Count == 0) return;
+
+        // Pick a valid enemy and increment its count
+        EnemyTypeConfig selected = validEnemies[Random.Range(0, validEnemies.Count)];
+        selected.currentSpawnedCount++;
+
+        Vector2 spawnPos = GetRandomSpawnPosition();
+        StartCoroutine(ExecuteSpawn(spawnPos, selected.prefab));
+    }
+
+    private Vector2 GetRandomSpawnPosition()
+    {
+        Vector2 finalPos = (Vector2)player.position + (Random.insideUnitCircle.normalized * spawnRadius);
+        int attempts = 0;
+
+        while (attempts < 10)
+        {
+            Vector2 randomDir = Random.insideUnitCircle.normalized;
+            float randomDist = Random.Range(minSpawnDistance, spawnRadius);
+            Vector3 testPos = player.position + (Vector3)(randomDir * randomDist);
+
+            if (!Physics2D.OverlapCircle(testPos, 0.4f, obstacleLayer)) return testPos;
+            attempts++;
+        }
+        return finalPos;
+    }
+
+    private IEnumerator ExecuteSpawn(Vector2 position, GameObject enemyPrefab)
+    {
+        enemiesAlive++;
+        if (spawnEffectPrefab != null)
+        {
+            GameObject effect = Instantiate(spawnEffectPrefab, position, Quaternion.identity);
+            Destroy(effect, effectDuration + 0.5f);
+        }
+
+        yield return new WaitForSeconds(effectDuration);
+        Instantiate(enemyPrefab, position, Quaternion.identity);
+    }
+
+    public void OnEnemyKilled() => enemiesAlive--;
+
+    // --- UPDATED GIZMOS ---
+    private void OnDrawGizmos()
+    {
+        // Draw even when not selected so you can always see the spawn zone
+        if (player == null) 
+        {
+            GameObject p = GameObject.FindGameObjectWithTag("Player");
+            if (p != null) player = p.transform;
+            return;
+        }
+
+        // Draw Spawn Radius (Cyan)
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(player.position, spawnRadius);
+
+        // Draw Safe Zone (Red) - Enemies won't spawn here
+        Gizmos.color = new Color(1, 0, 0, 0.5f);
+        Gizmos.DrawWireSphere(player.position, minSpawnDistance);
     }
 }
