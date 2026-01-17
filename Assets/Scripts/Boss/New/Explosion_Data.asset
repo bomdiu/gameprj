@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7cf270d3a84472409e064d73c833412, type: 3}
+  m_Name: Explosion_Data
+  m_EditorClassIdentifier: 
+  explosionVFX: {fileID: 6187875929811096851, guid: b502df0fed4577a429ab2769a16e0483, type: 3}
+  areaSize: {x: 4, y: 3}
+  borderWidth: 0.05
+  borderColor: {r: 0.7132075, g: 0, b: 0, a: 0.78431374}
+  coreColor: {r: 0.6226415, g: 0.07871127, b: 0.07871127, a: 0.5882353}
+  vfxScale: 5
+  damage: 15
+  explosionCount: 5
+  spawnInterval: 0.2
+  growthTime: 1
+  bossRecoverTime: 2
+  autoCooldown: 10

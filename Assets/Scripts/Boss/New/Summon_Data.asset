@@ -20,7 +20,7 @@ MonoBehaviour:
     prefab: {fileID: 9157198380874731861, guid: 86e19ac74ba67e5418bd39a7ce0b70e9, type: 3}
     count: 2
   spawnRadius: 4
-  totalCastDuration: 6
+  totalCastDuration: 4
   recoverTime: 2
   autoCooldown: 15
   indicatorLifeTime: 1

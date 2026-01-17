@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73231f4e1bf09b043b83e462375ebf2a, type: 3}
+  m_Name: Shockwave_Data
+  m_EditorClassIdentifier: 
+  waveCount: 5
+  spawnInterval: 1
+  screamDuration: 0
+  castShakeIntensity: 0.03
+  releaseShakeIntensity: 0.05
+  maxRadius: 8
+  expansionSpeed: 2
+  startWidth: 0.05
+  endWidth: 0.1
+  waveColor: {r: 0.87358487, g: 1, b: 0.9972518, a: 0.5882353}
+  segments: 40
+  damage: 1
+  knockbackForce: 1000000
+  castTime: 1
+  recoverTime: 3
+  autoCooldown: 18
