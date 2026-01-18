@@ -10,17 +10,17 @@ public class WaveManager : MonoBehaviour
     public class EnemyTypeConfig
     {
         public GameObject prefab;
-        public int maxAmountInWave; // NEW: Limit how many of THIS specific enemy can spawn
-        [HideInInspector] public int currentSpawnedCount; // Tracks current wave total
+        public int maxAmountInWave;
+        [HideInInspector] public int currentSpawnedCount;
     }
 
     [System.Serializable]
     public class WaveData
     {
         public string waveName;
-        public List<EnemyTypeConfig> enemyConfigs; // NEW: Config for each enemy type
-        public int totalEnemyCount;               // Total enemies for the whole wave
-        public float timeBetweenSpawns;    
+        public List<EnemyTypeConfig> enemyConfigs;
+        public int totalEnemyCount;
+        public float timeBetweenSpawns;
     }
 
     [Header("Wave Configuration")]
@@ -54,22 +54,45 @@ public class WaveManager : MonoBehaviour
         StartCoroutine(StartWaveSystem());
     }
 
-    private IEnumerator StartWaveSystem()
+ private IEnumerator StartWaveSystem()
+{
+    while (currentWaveIndex < waves.Count)
     {
-        while (currentWaveIndex < waves.Count)
+        // Reset per-enemy counters for the new wave
+        foreach(var config in waves[currentWaveIndex].enemyConfigs) config.currentSpawnedCount = 0;
+
+        yield return StartCoroutine(SpawnWave(waves[currentWaveIndex]));
+        
+        // 1. Wait until all enemies in the current wave are dead
+        while (enemiesAlive > 0) yield return new WaitForSeconds(0.5f);
+
+        // 2. Delay before the Upgrade Menu pops up
+        yield return new WaitForSeconds(1.0f); 
+
+        if (UpgradeManager.Instance != null)
         {
-            // Reset per-enemy counters for the new wave
-            foreach(var config in waves[currentWaveIndex].enemyConfigs) config.currentSpawnedCount = 0;
+            UpgradeManager.Instance.ShowUpgradeOptions();
 
-            yield return StartCoroutine(SpawnWave(waves[currentWaveIndex]));
-            
-            while (enemiesAlive > 0) yield return new WaitForSeconds(0.5f);
-
-            currentWaveIndex++;
-            yield return new WaitForSeconds(timeBetweenWaves);
+            // --- NEW: WAIT FOR UPGRADE SELECTION ---
+            // This loop forces WaveManager to wait until the panel is actually closed
+            // We use 'null' so it checks every frame regardless of Time.timeScale
+            while (UpgradeManager.Instance.upgradePanel.activeSelf)
+            {
+                yield return null; 
+            }
         }
-    }
 
+        // 3. --- NEW: DELAY AFTER CHOOSING UPGRADE ---
+        // This gives the player time to prepare before the next wave spawns
+        Debug.Log("Upgrade chosen. Preparing next wave...");
+        yield return new WaitForSeconds(2.0f); // Adjust this for the post-choice delay
+
+        currentWaveIndex++;
+
+        // 4. Final delay before the first enemy of the new wave spawns
+        yield return new WaitForSeconds(timeBetweenWaves); 
+    }
+}
     private IEnumerator SpawnWave(WaveData wave)
     {
         for (int i = 0; i < wave.totalEnemyCount; i++)
@@ -83,7 +106,6 @@ public class WaveManager : MonoBehaviour
     {
         if (player == null) return;
 
-        // Filter enemies that haven't hit their max count yet
         List<EnemyTypeConfig> validEnemies = new List<EnemyTypeConfig>();
         foreach (var config in wave.enemyConfigs)
         {
@@ -93,7 +115,6 @@ public class WaveManager : MonoBehaviour
 
         if (validEnemies.Count == 0) return;
 
-        // Pick a valid enemy and increment its count
         EnemyTypeConfig selected = validEnemies[Random.Range(0, validEnemies.Count)];
         selected.currentSpawnedCount++;
 
@@ -133,10 +154,8 @@ public class WaveManager : MonoBehaviour
 
     public void OnEnemyKilled() => enemiesAlive--;
 
-    // --- UPDATED GIZMOS ---
     private void OnDrawGizmos()
     {
-        // Draw even when not selected so you can always see the spawn zone
         if (player == null) 
         {
             GameObject p = GameObject.FindGameObjectWithTag("Player");
@@ -144,11 +163,9 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
-        // Draw Spawn Radius (Cyan)
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(player.position, spawnRadius);
 
-        // Draw Safe Zone (Red) - Enemies won't spawn here
         Gizmos.color = new Color(1, 0, 0, 0.5f);
         Gizmos.DrawWireSphere(player.position, minSpawnDistance);
     }

@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine.EventSystems; // REQUIRED for UI detection
 
 public class PlayerCombat : MonoBehaviour
 {
@@ -70,8 +72,8 @@ public class PlayerCombat : MonoBehaviour
 
     private int comboStep = 0;
     private float lastAttackStartTime; 
-    private float lastAttackEndTime;   
-    private bool isAttacking = false;
+    public float lastAttackEndTime;   
+    public bool isAttacking = false;
     private bool isFacingRight = true; 
     private Coroutine lungeCoroutine;
     private Coroutine recoveryCoroutine;
@@ -99,7 +101,17 @@ public class PlayerCombat : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0)) HandleInput();
+        // --- UPDATED INPUT CHECK ---
+        if (Input.GetMouseButtonDown(0)) 
+        {
+            // 1. Block if game is paused
+            if (PauseMenu.GameIsPaused) return;
+
+            // 2. Block if clicking on UI (Buttons, Upgrade Cards, etc.)
+            if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+
+            HandleInput();
+        }
 
         // Safety check to end attack if animator is in Idle/Walk
         if (isAttacking && Time.time - lastAttackStartTime > 0.05f) 
@@ -108,13 +120,10 @@ public class PlayerCombat : MonoBehaviour
             if (state.IsName("Idle") || state.IsName("Walk")) EndAttackMove();
         }
 
-        // --- NEW: COOLDOWN ENFORCEMENT ---
-        // If we are NOT attacking, constantly check if there is a buffer ready to fire
         if (!isAttacking)
         {
             TryExecuteBufferedAttack();
             
-            // Reset combo if the window expires
             if (comboStep > 0 && Time.time - lastAttackEndTime > comboWindow)
             {
                 comboStep = 0;
@@ -124,11 +133,9 @@ public class PlayerCombat : MonoBehaviour
 
     private void HandleInput()
     {
-        // Record intent
         hasBufferedInput = true;
         lastBufferedTime = Time.time;
 
-        // Try to execute immediately if we are idle
         if (!isAttacking)
         {
             TryExecuteBufferedAttack();
@@ -139,14 +146,12 @@ public class PlayerCombat : MonoBehaviour
     {
         if (!hasBufferedInput) return;
 
-        // Discard buffer if it's older than the window
         if (Time.time - lastBufferedTime > bufferWindow)
         {
             hasBufferedInput = false;
             return;
         }
 
-        // EXCLUSIVE CHECK: Only fire if enough time has passed since the LAST attack ended
         float currentCooldown = GetCurrentCooldown();
         if (Time.time - lastAttackEndTime >= currentCooldown)
         {
@@ -156,7 +161,6 @@ public class PlayerCombat : MonoBehaviour
 
     private float GetCurrentCooldown()
     {
-        // These are the delays required BEFORE starting the next hit
         if (comboStep == 1) return cooldown1to2;
         if (comboStep == 2) return cooldown2to3;
         return cooldown3to1;
@@ -164,12 +168,11 @@ public class PlayerCombat : MonoBehaviour
 
     private void PrepareAttack()
     {
-        hasBufferedInput = false; // Buffer successfully used
+        hasBufferedInput = false; 
 
         if (lungeCoroutine != null) StopCoroutine(lungeCoroutine);
         if (recoveryCoroutine != null) StopCoroutine(recoveryCoroutine);
         
-        // Step forward in the combo chain
         bool inComboChain = (Time.time - lastAttackEndTime <= comboWindow);
         comboStep = (inComboChain && comboStep < 3) ? comboStep + 1 : 1;
 
@@ -249,15 +252,13 @@ public class PlayerCombat : MonoBehaviour
     { 
         if (!isAttacking) return;
         isAttacking = false;
-        lastAttackEndTime = Time.time; // Mark the end of this animation
+        lastAttackEndTime = Time.time; 
         
         if (lungeCoroutine != null) StopCoroutine(lungeCoroutine);
         rb.velocity = Vector2.zero;
         
         DisableAllHitboxes();
 
-        // FIXED: Do not call PrepareAttack here. 
-        // TryExecuteBufferedAttack in the Update loop will handle it once the cooldown is ready.
         if (recoveryCoroutine != null) StopCoroutine(recoveryCoroutine);
         recoveryCoroutine = StartCoroutine(RecoveryRoutine());
     }

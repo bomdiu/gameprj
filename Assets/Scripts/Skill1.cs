@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections;
 
-// The class name 'Skill1' now matches your file name 'Skill1.cs'
 public class Skill1 : MonoBehaviour
 {
     [Header("Skill Settings")]
@@ -10,19 +9,24 @@ public class Skill1 : MonoBehaviour
     public float cooldown = 1.5f;
     public float releaseDelay = 0.2f;
 
+    [Header("Melee Interruption Settings")]
+    [Tooltip("How long must the player wait after an attack ends before casting?")]
+    public float postAttackDelay = 0.3f; 
+
     [Header("References")]
     private Player_Energy energy;
     private PlayerMovement movement;
-    private PlayerCombat combat;
+    private PlayerCombat combat; 
+    private Rigidbody2D rb;
     private Camera cam;
     private float nextFireTime;
 
     void Awake()
     {
-        // Finds the components needed for your Unity scripting
         energy = GetComponent<Player_Energy>();
         movement = GetComponent<PlayerMovement>();
         combat = GetComponent<PlayerCombat>();
+        rb = GetComponent<Rigidbody2D>();
         cam = Camera.main;
     }
 
@@ -30,7 +34,21 @@ public class Skill1 : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.F) && Time.time >= nextFireTime)
         {
-            // Checks your custom energy script before allowing the cast
+            // 1. Prevent casting if currently swinging
+            if (combat != null && combat.isAttacking) return;
+
+            // 2. NEW: Check if enough time has passed since the last attack ended
+            if (combat != null)
+            {
+                float timeSinceLastAttack = Time.time - combat.lastAttackEndTime;
+                if (timeSinceLastAttack < postAttackDelay)
+                {
+                    Debug.Log("Waiting for attack recovery: " + (postAttackDelay - timeSinceLastAttack).ToString("F2") + "s remaining.");
+                    return;
+                }
+            }
+
+            // 3. Check energy script before allowing the cast
             if (energy != null && energy.UseEnergy(energyCost))
             {
                 StartCoroutine(CastRoutine());
@@ -42,8 +60,9 @@ public class Skill1 : MonoBehaviour
     {
         nextFireTime = Time.time + cooldown;
 
-        // Locks player movement during the casting animation
+        // Locks player movement and stops physics momentum
         if (movement != null) movement.canMove = false;
+        if (rb != null) rb.velocity = Vector2.zero; 
         
         if (combat != null && combat.anim != null) 
             combat.anim.SetTrigger("CastFireball");
@@ -60,7 +79,6 @@ public class Skill1 : MonoBehaviour
     {
         if (fireballPrefab == null) return;
 
-        // Calculates direction toward the mouse for top-down aiming
         Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
         mousePos.z = 0;
         Vector2 dir = (mousePos - transform.position).normalized;

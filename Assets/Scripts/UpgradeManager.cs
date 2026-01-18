@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI; 
+using UnityEngine.UI;
+using System.Collections; // Required for Coroutines
 
 public class UpgradeManager : MonoBehaviour
 {
@@ -11,9 +12,13 @@ public class UpgradeManager : MonoBehaviour
     public Transform cardsContainer; 
     public GameObject cardPrefab; 
     
-    // --- THÊM BIẾN PORTAL TẠI ĐÂY ---
+    [Header("Visual Effects")]
+    [SerializeField] private CanvasGroup panelCanvasGroup; // Add a CanvasGroup to your panel
+    [SerializeField] private float animationDuration = 0.4f;
+    [SerializeField] private Vector3 startScale = new Vector3(0.5f, 0.5f, 1f);
+
     [Header("Portal Settings")]
-    public GameObject portalObject; // Kéo object Portal (cái cổng) vào đây
+    public GameObject portalObject; 
 
     [Header("Data")]
     public List<SkillData> allSkills; 
@@ -21,17 +26,23 @@ public class UpgradeManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        if(upgradePanel != null) upgradePanel.SetActive(false); 
+        if(upgradePanel != null) 
+        {
+            upgradePanel.SetActive(false); 
+            // Initialize transparency if CanvasGroup exists
+            if (panelCanvasGroup != null) panelCanvasGroup.alpha = 0;
+        }
         
-        // Đảm bảo cổng luôn ẩn khi bắt đầu màn chơi
         if(portalObject != null) portalObject.SetActive(false); 
     }
 
     public void ShowUpgradeOptions()
     {
-        Time.timeScale = 0; // Dừng thời gian game
+        // Stop time and show panel
+        Time.timeScale = 0; 
         upgradePanel.SetActive(true);
 
+        // Clear and refill cards
         foreach (Transform child in cardsContainer)
         {
             Destroy(child.gameObject);
@@ -44,10 +55,6 @@ public class UpgradeManager : MonoBehaviour
             GameObject newCard = Instantiate(cardPrefab, cardsContainer);
             newCard.transform.localScale = Vector3.one; 
             
-            Vector3 pos = newCard.transform.localPosition;
-            pos.z = 0;
-            newCard.transform.localPosition = pos;
-
             SkillCardUI cardUI = newCard.GetComponent<SkillCardUI>();
             if (cardUI != null)
             {
@@ -55,6 +62,40 @@ public class UpgradeManager : MonoBehaviour
             }
         }
 
+        // Trigger the visual entrance animation
+        StartCoroutine(AnimateEntrance());
+    }
+
+    private IEnumerator AnimateEntrance()
+    {
+        float timer = 0;
+        
+        // Reset scale and alpha before starting
+        cardsContainer.localScale = startScale;
+        if (panelCanvasGroup != null) panelCanvasGroup.alpha = 0;
+
+        while (timer < animationDuration)
+        {
+            // MUST use unscaledDeltaTime because timeScale is 0
+            timer += Time.unscaledDeltaTime; 
+            float progress = timer / animationDuration;
+
+            // Ease out cubic for a smoother feel
+            float easedProgress = 1f - Mathf.Pow(1f - progress, 3);
+
+            if (panelCanvasGroup != null)
+                panelCanvasGroup.alpha = easedProgress;
+
+            cardsContainer.localScale = Vector3.Lerp(startScale, Vector3.one, easedProgress);
+            
+            yield return null;
+        }
+
+        // Ensure final values are set
+        if (panelCanvasGroup != null) panelCanvasGroup.alpha = 1;
+        cardsContainer.localScale = Vector3.one;
+
+        // Force layout update
         LayoutGroup group = cardsContainer.GetComponent<LayoutGroup>();
         if (group != null)
         {
@@ -63,16 +104,14 @@ public class UpgradeManager : MonoBehaviour
         }
     }
 
-    // Hàm này được gọi khi người chơi nhấn chọn một thẻ kỹ thuật số
     public void CloseUpgradePanel()
     {
         upgradePanel.SetActive(false);
-        Time.timeScale = 1; // Cho game chạy tiếp
+        Time.timeScale = 1; // Resume game
 
-        // --- KÍCH HOẠT CỔNG SAU KHI CHỌN XONG ---
         if (portalObject != null)
         {
-            portalObject.SetActive(true); // Hiện cổng để người chơi đi tới
+            portalObject.SetActive(true); 
             Debug.Log("Portal has appeared!");
         }
     }
