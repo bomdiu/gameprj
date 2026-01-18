@@ -12,7 +12,9 @@ public class Skill_BiteDash : MonoBehaviour
     private GameObject hitboxObj;
     private BoxCollider2D hitboxCol;
 
-    private float currentCooldown = 0f;
+    public float currentCooldown = 0f;
+    // Thêm dòng này vào bất kỳ chỗ nào trong class skill
+    public bool IsReady => currentCooldown <= 0;
 
     private void Awake()
     {

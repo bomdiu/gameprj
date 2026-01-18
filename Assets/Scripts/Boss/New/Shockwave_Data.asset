@@ -27,4 +27,4 @@ MonoBehaviour:
   knockbackForce: 1000000
   castTime: 1
   recoverTime: 3
-  autoCooldown: 18
+  autoCooldown: 20

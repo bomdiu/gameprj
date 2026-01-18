@@ -22,6 +22,6 @@ MonoBehaviour:
   spawnRadius: 4
   totalCastDuration: 4
   recoverTime: 2
-  autoCooldown: 15
+  autoCooldown: 10
   indicatorLifeTime: 1
   spawnDelay: 0.5

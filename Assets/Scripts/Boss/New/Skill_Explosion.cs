@@ -8,7 +8,9 @@ public class Skill_Explosion : MonoBehaviour
     public ExplosionSkillData skillData;
     public GameObject indicatorPrefab; // Prefab rỗng có gắn script ExplosionIndicator
 
-    private float currentCooldown = 0f;
+    public float currentCooldown = 0f;
+    // Thêm dòng này vào bất kỳ chỗ nào trong class skill
+    public bool IsReady => currentCooldown <= 0;
 
     private void Update()
     {

@@ -11,7 +11,9 @@ public class Skill_Summon : MonoBehaviour
     [Header("Hiệu ứng")]
     public GameObject spawnIndicatorPrefab; // Prefab vòng tròn
 
-    private float currentCooldown = 0f;
+    public float currentCooldown = 0f;
+    // Thêm dòng này vào bất kỳ chỗ nào trong class skill
+    public bool IsReady => currentCooldown <= 0;
 
     private void Update()
     {

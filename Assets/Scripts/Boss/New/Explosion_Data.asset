@@ -23,4 +23,4 @@ MonoBehaviour:
   spawnInterval: 0.2
   growthTime: 1
   bossRecoverTime: 2
-  autoCooldown: 10
+  autoCooldown: 15

@@ -463,6 +463,8 @@ GameObject:
   - component: {fileID: 1429916194}
   - component: {fileID: 1429916195}
   - component: {fileID: 1429916196}
+  - component: {fileID: 1429916198}
+  - component: {fileID: 1429916197}
   m_Layer: 7
   m_Name: Boss
   m_TagString: Enemy
@@ -635,6 +637,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   boss: {fileID: 1429916193}
   skillData: {fileID: 11400000, guid: 4ab3b8bb2e4a4a74a8ce7ef33a4b3a59, type: 2}
+  currentCooldown: 0
 --- !u!114 &1429916193
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -667,6 +670,7 @@ MonoBehaviour:
   boss: {fileID: 1429916193}
   skillData: {fileID: 11400000, guid: ba52b2bc6084e8a47a9a3ff019d66ea0, type: 2}
   spawnIndicatorPrefab: {fileID: 7513434861039698068, guid: 3a009fc93d2c14b438b1b313619d1783, type: 3}
+  currentCooldown: 0
 --- !u!114 &1429916195
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -682,6 +686,7 @@ MonoBehaviour:
   boss: {fileID: 1429916193}
   skillData: {fileID: 11400000, guid: 1fafdf883570b3647b54bac10d9852c9, type: 2}
   indicatorPrefab: {fileID: 2962787802045648399, guid: 370f418c350b5df4aab0fc5df4ecfd9d, type: 3}
+  currentCooldown: 0
 --- !u!114 &1429916196
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -697,6 +702,43 @@ MonoBehaviour:
   boss: {fileID: 1429916193}
   skillData: {fileID: 11400000, guid: da08b1578869ee6469b1aa65cdb3a5ed, type: 2}
   shockwavePrefab: {fileID: 6905381611763746637, guid: 20876d56de67a7a4ab1bf94954265ce9, type: 3}
+  currentCooldown: 0
+--- !u!114 &1429916197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1429916186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b944208992f99d4681ced1aaa376f39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  boss: {fileID: 1429916193}
+  health: {fileID: 1429916198}
+  skillBite: {fileID: 1429916192}
+  skillSummon: {fileID: 1429916194}
+  skillExplode: {fileID: 1429916195}
+  skillShockwave: {fileID: 1429916196}
+  decisionDelay: 0.5
+  phase2Threshold: 0.5
+  currentPhaseName: Phase 1
+  biteCounter: 0
+--- !u!114 &1429916198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1429916186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5aa30ceea6682c747b568e8a3f714cee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 1000
+  currentHealth: 0
 --- !u!1001 &1435289194
 PrefabInstance:
   m_ObjectHideFlags: 0

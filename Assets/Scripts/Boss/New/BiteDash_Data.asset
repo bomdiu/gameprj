@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   skillName: Bite Dash
   damage: 30
-  autoCooldown: 0.5
+  autoCooldown: 1
   prepareTime: 0.7
   lineGrowthTime: 0.3
   maxLength: 6

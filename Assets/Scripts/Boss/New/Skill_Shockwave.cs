@@ -9,7 +9,9 @@ public class Skill_Shockwave : MonoBehaviour
     public GameObject shockwavePrefab; 
 
     private LineRenderer telegraphLine; 
-    private float currentCooldown = 0f;
+    public float currentCooldown = 0f;
+    // Thêm dòng này vào bất kỳ chỗ nào trong class skill
+    public bool IsReady => currentCooldown <= 0;
 
     private void Awake()
     {
