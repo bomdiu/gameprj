@@ -16,8 +16,6 @@ public class Skill_Explosion : MonoBehaviour
     {
         if (currentCooldown > 0)
             currentCooldown -= Time.deltaTime;
-        else if (boss.CanAttack())
-            ActivateSkill();
     }
 
     public void ActivateSkill()

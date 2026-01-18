@@ -7,7 +7,7 @@ public class BossAI : MonoBehaviour
     public BossController boss;
     public BossHealth health;
 
-    [Header("Always Available (Standard Attack)")]
+    [Header("Basic Skill (Always)")]
     public Skill_BiteDash skillBite;
 
     [Header("Phase 1 - Special Skills")]
@@ -17,37 +17,28 @@ public class BossAI : MonoBehaviour
     public Skill_Explosion skillExplode;
     public Skill_Shockwave skillShockwave;
 
-    [Header("AI Configuration")]
+    [Header("AI Config")]
     public float decisionDelay = 0.5f;
-    [Range(0f, 1f)] public float phase2Threshold = 0.5f; // 0.5 = 50% health
-
-    [Header("Debug Info")]
-    public string currentPhaseName = "Phase 1";
+    
+    [Header("Debug - Read Only")]
+    public string activePhase = "Phase 1";
     public int biteCounter = 0;
+    public int targetBites = 3;
 
-    private List<MonoBehaviour> specialSkillPool = new List<MonoBehaviour>();
-    private int targetBites;
-    private float decisionTimer;
-    private bool isPhase2Active = false;
+    private float decisionTimer = 0f;
 
     private void Start()
     {
-        // 1. Initial Pool: Only Phase 1 specials are allowed
-        specialSkillPool.Clear();
-        specialSkillPool.Add(skillSummon);
-        
+        // Randomize the first set of bites
         targetBites = Random.Range(3, 5);
     }
 
     private void Update()
     {
-        // GUARD: Only make decisions if the boss is Idle
+        // 1. GUARD: Only think if the boss is currently Idle
         if (boss.currentState != BossState.Idle) return;
 
-        // 2. Health Check: Handle Phase Transition
-        CheckHealthThreshold();
-
-        // 3. Decision Timer
+        // 2. TIMER: Delay between attacks
         decisionTimer += Time.deltaTime;
         if (decisionTimer >= decisionDelay)
         {
@@ -56,34 +47,14 @@ public class BossAI : MonoBehaviour
         }
     }
 
-    private void CheckHealthThreshold()
-    {
-        if (isPhase2Active) return;
-
-        // Standard percentage calculation: $Current / Max$
-        float hpPercent = (float)health.currentHealth / health.maxHealth;
-
-        if (hpPercent <= phase2Threshold)
-        {
-            ActivatePhase2();
-        }
-    }
-
-    private void ActivatePhase2()
-    {
-        isPhase2Active = true;
-        currentPhaseName = "Phase 2 (Danger)";
-
-        // UNLOCK: Add Phase 2 skills to the pool
-        specialSkillPool.Add(skillExplode);
-        specialSkillPool.Add(skillShockwave);
-
-        Debug.Log("<color=red><b>Boss Phase 2 Triggered!</b></color> Explosion and Shockwave unlocked.");
-    }
-
     private void MakeDecision()
     {
-        // LOGIC: The "Bite-Bite-Special" Rhythm
+        // Check health script for the 50% threshold
+        bool isLowHealth = health.IsPhase2;
+        activePhase = isLowHealth ? "PHASE 2" : "PHASE 1";
+
+        // === LOGIC 1: THE BITE RHYTHM ===
+        // Boss bites several times before using a "Special" skill
         if (biteCounter < targetBites)
         {
             if (skillBite.IsReady)
@@ -91,45 +62,47 @@ public class BossAI : MonoBehaviour
                 skillBite.ActivateSkill();
                 biteCounter++;
             }
+            return;
         }
-        else
+
+        // === LOGIC 2: SPECIAL SKILL SELECTION ===
+        // We build a list of "Allowed" skills based on current Phase
+        List<MonoBehaviour> allowedSpecials = new List<MonoBehaviour>();
+
+        // Phase 1: Always includes Summon
+        if (skillSummon.IsReady) allowedSpecials.Add(skillSummon);
+
+        // Phase 2: ONLY adds these if health is < 50%
+        if (isLowHealth)
         {
-            ExecuteSpecialFromPool();
+            if (skillExplode.IsReady) allowedSpecials.Add(skillExplode);
+            if (skillShockwave.IsReady) allowedSpecials.Add(skillShockwave);
         }
-    }
 
-    private void ExecuteSpecialFromPool()
-    {
-        // Create a temporary list of skills that are currently off-cooldown
-        List<MonoBehaviour> readySpecials = specialSkillPool.FindAll(s => IsSkillReady(s));
-
-        if (readySpecials.Count > 0)
+        // EXECUTION: Pick one randomly from the allowed list
+        if (allowedSpecials.Count > 0)
         {
-            // Pick a random skill from the allowed/ready list
-            MonoBehaviour chosen = readySpecials[Random.Range(0, readySpecials.Count)];
-            
-            TriggerSpecificSkill(chosen);
+            int index = Random.Range(0, allowedSpecials.Count);
+            TriggerSkill(allowedSpecials[index]);
 
             // Reset the bite cycle
             biteCounter = 0;
-            targetBites = isPhase2Active ? Random.Range(2, 4) : Random.Range(3, 5);
+            targetBites = isLowHealth ? Random.Range(2, 4) : Random.Range(3, 5);
+        }
+        else
+        {
+            // Fallback: If no specials are ready, just bite again
+            if (skillBite.IsReady) skillBite.ActivateSkill();
         }
     }
 
-    // Helper: Map the generic MonoBehaviour back to the specific skill script
-    private void TriggerSpecificSkill(MonoBehaviour s)
+    // Helper: Correctly triggers the specific script
+    private void TriggerSkill(MonoBehaviour skill)
     {
-        if (s == skillSummon) skillSummon.ActivateSkill();
-        else if (s == skillExplode) skillExplode.ActivateSkill();
-        else if (s == skillShockwave) skillShockwave.ActivateSkill();
-    }
-
-    // Helper: Check cooldowns for the pool
-    private bool IsSkillReady(MonoBehaviour s)
-    {
-        if (s == skillSummon) return skillSummon.IsReady;
-        if (s == skillExplode) return skillExplode.IsReady;
-        if (s == skillShockwave) return skillShockwave.IsReady;
-        return false;
+        if (skill == skillSummon) skillSummon.ActivateSkill();
+        else if (skill == skillExplode) skillExplode.ActivateSkill();
+        else if (skill == skillShockwave) skillShockwave.ActivateSkill();
+        
+        Debug.Log($"[AI] {activePhase} - Triggered: {skill.GetType().Name}");
     }
 }

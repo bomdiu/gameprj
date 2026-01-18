@@ -21,13 +21,7 @@ public class Skill_Summon : MonoBehaviour
         {
             currentCooldown -= Time.deltaTime;
         }
-        else 
-        {
-            if (boss.CanAttack())
-            {
-                ActivateSkill();
-            }
-        }
+      
     }
 
     public void ActivateSkill()

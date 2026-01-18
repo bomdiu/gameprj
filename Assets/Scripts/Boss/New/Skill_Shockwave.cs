@@ -22,8 +22,6 @@ public class Skill_Shockwave : MonoBehaviour
     {
         if (currentCooldown > 0)
             currentCooldown -= Time.deltaTime;
-        else if (boss.CanAttack())
-            ActivateSkill();
     }
 
     // (Giữ nguyên hàm CreateTelegraphLine...)

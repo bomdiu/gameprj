@@ -29,13 +29,7 @@ public class Skill_BiteDash : MonoBehaviour
         {
             currentCooldown -= Time.deltaTime;
         }
-        else 
-        {
-            if (boss.CanAttack())
-            {
-                ActivateSkill();
-            }
-        }
+      
     }
 
     // --- PHẦN TẠO VISUAL (LINE RENDERER) ---
