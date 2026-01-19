@@ -17,11 +17,11 @@ MonoBehaviour:
     prefab: {fileID: 194198021288000057, guid: b78671c6c4d9ec240a61386cd2c23c1f, type: 3}
     count: 2
   - name: 
-    prefab: {fileID: 9157198380874731861, guid: 86e19ac74ba67e5418bd39a7ce0b70e9, type: 3}
+    prefab: {fileID: 7261602332989833055, guid: 53fc0da6c24e0f64d9afe3c553739673, type: 3}
     count: 2
   spawnRadius: 4
   totalCastDuration: 4
   recoverTime: 2
-  autoCooldown: 10
+  autoCooldown: 15
   indicatorLifeTime: 1
   spawnDelay: 0.5

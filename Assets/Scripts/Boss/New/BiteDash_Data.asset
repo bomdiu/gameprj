@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   skillName: Bite Dash
   damage: 30
-  autoCooldown: 1
-  prepareTime: 0.7
-  lineGrowthTime: 0.3
+  autoCooldown: 0
+  prepareTime: 0.5
+  lineGrowthTime: 0.2
   maxLength: 6
   width: 0.6
   telegraphColor: {r: 0.78113204, g: 0.12822352, b: 0.12822352, a: 0.5882353}
   lineMaterial: {fileID: 0}
   dashSpeed: 10
   dashDuration: 0.6
-  recoverTime: 0.5
+  recoverTime: 1

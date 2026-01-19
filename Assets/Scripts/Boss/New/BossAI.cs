@@ -7,40 +7,47 @@ public class BossAI : MonoBehaviour
     public BossController boss;
     public BossHealth health;
 
-    [Header("Basic Skill (Always)")]
+    [Header("Basic Skill")]
     public Skill_BiteDash skillBite;
 
-    [Header("Phase 1 - Special Skills")]
+    [Header("Phase 1 Skills")]
     public Skill_Summon skillSummon;
 
-    [Header("Phase 2 - Special Skills (Unlocked < 50% HP)")]
+    [Header("Phase 2 Skills")]
     public Skill_Explosion skillExplode;
     public Skill_Shockwave skillShockwave;
 
-    [Header("AI Config")]
-    public float decisionDelay = 0.5f;
+    [Header("AI Rhythm Config")] // --- CẤU HÌNH NHỊP ĐIỆU ---
+    [Tooltip("Thời gian nghỉ bình thường sau khi dùng Skill đặc biệt")]
+    public float standardDelay = 1.5f; 
     
+    [Tooltip("Thời gian nghỉ ngắn giữa các cú cắn liên tiếp (Spam)")]
+    public float biteSequenceDelay = 0.3f; // <-- BIẾN MỚI: Chỉnh tốc độ spam cắn ở đây
+
     [Header("Debug - Read Only")]
     public string activePhase = "Phase 1";
     public int biteCounter = 0;
     public int targetBites = 3;
 
     private float decisionTimer = 0f;
+    private float currentDelayThreshold = 3.0f; // Biến nội bộ để lưu thời gian chờ hiện tại
 
     private void Start()
     {
-        // Randomize the first set of bites
         targetBites = Random.Range(3, 5);
+        currentDelayThreshold = standardDelay; // Bắt đầu bằng delay chuẩn
     }
 
     private void Update()
     {
-        // 1. GUARD: Only think if the boss is currently Idle
+        // 1. Chỉ suy nghĩ khi Boss đang Rảnh (Idle)
         if (boss.currentState != BossState.Idle) return;
 
-        // 2. TIMER: Delay between attacks
+        // 2. Đếm giờ dựa trên ngưỡng (Threshold) động
         decisionTimer += Time.deltaTime;
-        if (decisionTimer >= decisionDelay)
+        
+        // So sánh với currentDelayThreshold thay vì biến cố định
+        if (decisionTimer >= currentDelayThreshold) 
         {
             MakeDecision();
             decisionTimer = 0f;
@@ -49,60 +56,74 @@ public class BossAI : MonoBehaviour
 
     private void MakeDecision()
     {
-        // Check health script for the 50% threshold
         bool isLowHealth = health.IsPhase2;
         activePhase = isLowHealth ? "PHASE 2" : "PHASE 1";
 
-        // === LOGIC 1: THE BITE RHYTHM ===
-        // Boss bites several times before using a "Special" skill
+        // === LOGIC 1: CHUỖI CẮN (SPAM) ===
         if (biteCounter < targetBites)
         {
             if (skillBite.IsReady)
             {
                 skillBite.ActivateSkill();
                 biteCounter++;
+
+                // Nếu đây là cú cắn CUỐI CÙNG trong chuỗi
+                if (biteCounter >= targetBites) 
+                {
+                    // Nghỉ lâu hơn một chút để báo hiệu sắp đổi chiêu
+                    // Ví dụ: Nghỉ 1.0 giây trước khi Summon
+                    currentDelayThreshold = 1.0f; 
+                }
+
+                // QUAN TRỌNG: Sau khi cắn, lần tới chỉ cần chờ một chút thôi
+                else
+                {
+                currentDelayThreshold = biteSequenceDelay; 
+                }
             }
             return;
         }
 
-        // === LOGIC 2: SPECIAL SKILL SELECTION ===
-        // We build a list of "Allowed" skills based on current Phase
+        // === LOGIC 2: SKILL ĐẶC BIỆT ===
         List<MonoBehaviour> allowedSpecials = new List<MonoBehaviour>();
 
-        // Phase 1: Always includes Summon
         if (skillSummon.IsReady) allowedSpecials.Add(skillSummon);
 
-        // Phase 2: ONLY adds these if health is < 50%
         if (isLowHealth)
         {
             if (skillExplode.IsReady) allowedSpecials.Add(skillExplode);
             if (skillShockwave.IsReady) allowedSpecials.Add(skillShockwave);
         }
 
-        // EXECUTION: Pick one randomly from the allowed list
         if (allowedSpecials.Count > 0)
         {
             int index = Random.Range(0, allowedSpecials.Count);
             TriggerSkill(allowedSpecials[index]);
 
-            // Reset the bite cycle
+            // Reset chuỗi cắn
             biteCounter = 0;
             targetBites = isLowHealth ? Random.Range(2, 4) : Random.Range(3, 5);
+
+            // QUAN TRỌNG: Sau khi dùng skill to, Boss cần nghỉ ngơi lâu hơn
+            currentDelayThreshold = standardDelay;
         }
         else
         {
-            // Fallback: If no specials are ready, just bite again
-            if (skillBite.IsReady) skillBite.ActivateSkill();
+            // Fallback: Nếu không có skill to nào hồi kịp thì cắn đỡ
+            if (skillBite.IsReady) 
+            {
+                skillBite.ActivateSkill();
+                currentDelayThreshold = biteSequenceDelay; // Cắn thì vẫn delay ngắn
+            }
         }
     }
 
-    // Helper: Correctly triggers the specific script
     private void TriggerSkill(MonoBehaviour skill)
     {
         if (skill == skillSummon) skillSummon.ActivateSkill();
         else if (skill == skillExplode) skillExplode.ActivateSkill();
         else if (skill == skillShockwave) skillShockwave.ActivateSkill();
         
-        Debug.Log($"[AI] {activePhase} - Triggered: {skill.GetType().Name}");
+        Debug.Log($"[AI] Triggered: {skill.GetType().Name}");
     }
 }
