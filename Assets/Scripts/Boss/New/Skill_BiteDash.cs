@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections;
-using System.Collections.Generic; // Cần thư viện này để dùng List
+using System.Collections.Generic;
 
 public class Skill_BiteDash : MonoBehaviour
 {
@@ -135,13 +135,8 @@ public class Skill_BiteDash : MonoBehaviour
         IgnoreMinionCollision(false);
     }
 
-    // --- CÁC HÀM VISUAL GIỮ NGUYÊN ---
-    // (Giữ nguyên các hàm CreateLineRenderer, CreateHitbox, SyncHitbox... cũ của bạn ở đây)
-    // Để cho gọn tôi không paste lại đoạn visual cũ, bạn hãy giữ nguyên phần dưới nhé.
+    // --- CÁC HÀM VISUAL ---
     
-    // ... Copy phần visual cũ vào dưới này ...
-    
-    // Phần Visual Helper (Paste lại để code chạy được nếu bạn copy đè)
     void CreateLineRenderer() {
         GameObject lineObj = new GameObject("TelegraphLine");
         lineObj.transform.SetParent(transform);
@@ -152,6 +147,7 @@ public class Skill_BiteDash : MonoBehaviour
         else lineRend.material = new Material(Shader.Find("Sprites/Default"));
         lineRend.enabled = false;
     }
+
     void CreateHitbox() {
         hitboxObj = new GameObject("DashHitbox");
         hitboxObj.transform.SetParent(transform);
@@ -162,15 +158,26 @@ public class Skill_BiteDash : MonoBehaviour
         handler.Setup(this); 
         hitboxObj.SetActive(false); 
     }
+
+    // --- NEW: DAMAGE LOGIC HERE ---
     public void OnHitPlayer(GameObject playerObj) {
-        // playerObj.GetComponent<PlayerHealth>().TakeDamage(skillData.damage);
+        // Find the PlayerStats component on the player object and apply damage
+        PlayerStats stats = playerObj.GetComponent<PlayerStats>();
+        if (stats != null)
+        {
+            stats.TakeDamage(skillData.damage);
+            // Optional: Apply knockback or other effects here if needed
+        }
     }
+    // ------------------------------
+
     void SyncHitboxToTelegraph(Vector2 direction) {
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         hitboxObj.transform.rotation = Quaternion.Euler(0, 0, angle);
         hitboxCol.size = new Vector2(1.5f, skillData.width);
         hitboxCol.offset = new Vector2(0.5f, 0); 
     }
+
     private IEnumerator ShowLineTelegraph(Vector2 direction) {
         lineRend.enabled = true;
         lineRend.startWidth = skillData.width; lineRend.endWidth = skillData.width;

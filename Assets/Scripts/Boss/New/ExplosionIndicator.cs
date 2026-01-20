@@ -11,7 +11,7 @@ public class ExplosionIndicator : MonoBehaviour
     private Transform coreTransform;
     private MeshRenderer coreMeshRenderer;
     private LineRenderer lineBorder;
-    private PolygonCollider2D col; // Dùng Polygon để khớp hình Elip
+    // Removed: private PolygonCollider2D col; // No longer needed, logic is handled in Skill script
 
     // Số lượng điểm để vẽ hình tròn (càng cao càng mượt)
     private int segments = 60; 
@@ -27,7 +27,7 @@ public class ExplosionIndicator : MonoBehaviour
         // === BƯỚC 1: TÍNH TOÁN TỌA ĐỘ (Geometry Math) ===
         // Tính danh sách các điểm tạo nên hình Elip/Tròn
         Vector3[] borderPoints = new Vector3[segments];
-        Vector2[] colliderPoints = new Vector2[segments]; // Collider cần Vector2
+        // Removed: Vector2[] colliderPoints = new Vector2[segments]; 
 
         float angleStep = 360f / segments;
         // Bán kính là 1 nửa của kích thước (Size)
@@ -42,7 +42,7 @@ public class ExplosionIndicator : MonoBehaviour
             float y = Mathf.Cos(angle) * radiusY;
 
             borderPoints[i] = new Vector3(x, y, 0);
-            colliderPoints[i] = new Vector2(x, y);
+            // colliderPoints[i] = new Vector2(x, y);
         }
 
 
@@ -84,12 +84,9 @@ public class ExplosionIndicator : MonoBehaviour
         coreMeshRenderer.material = coreMat;
         coreMeshRenderer.sortingOrder = -1; // Vẽ dưới viền
 
-
-        // === BƯỚC 4: TẠO HITBOX ===
-        col = gameObject.AddComponent<PolygonCollider2D>();
-        col.points = colliderPoints; // Hitbox khớp 100% với hình vẽ
-        col.isTrigger = true;
-        col.enabled = false; 
+        // === REMOVED: BƯỚC 4: TẠO HITBOX ===
+        // We removed the collider generation because Skill_Explosion.cs now handles damage via Physics2D.OverlapCircle.
+        // This makes the logic cleaner and prevents double damage.
     }
 
     // Hàm phụ trợ: Tạo Mesh hình tròn từ danh sách điểm viền
@@ -128,14 +125,14 @@ public class ExplosionIndicator : MonoBehaviour
         timer += Time.deltaTime;
 
         // --- LÕI TO DẦN ---
-        // Scale Mesh từ 0 lên 1 (vì Mesh đã được sinh ra với kích thước chuẩn Max Size)
-        float progress = Mathf.Clamp01(timer / data.growthTime);
+        // Updated: Uses 'explosionDelay' instead of 'growthTime'
+        float progress = Mathf.Clamp01(timer / data.explosionDelay);
         if (coreTransform != null)
         {
             coreTransform.localScale = Vector3.one * progress;
         }
 
-        if (timer >= data.growthTime)
+        if (timer >= data.explosionDelay)
         {
             StartCoroutine(ExplodeRoutine());
         }
@@ -154,18 +151,13 @@ public class ExplosionIndicator : MonoBehaviour
         if (lineBorder) lineBorder.enabled = false;
         if (coreMeshRenderer) coreMeshRenderer.enabled = false;
 
-        col.enabled = true;
-        yield return new WaitForSeconds(0.1f); 
+        // No collider to enable here anymore. 
+        // Logic handled by Skill_Explosion.cs
+        
+        yield return new WaitForSeconds(0.5f); // Wait for VFX or just cleanup
         
         Destroy(gameObject);
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (collision.CompareTag("Player"))
-        {
-            Debug.Log("BOOM! Damage: " + data.damage);
-            // collision.GetComponent<PlayerHealth>().TakeDamage(data.damage);
-        }
-    }
+    // Removed OnTriggerEnter2D because damage is handled in the Skill script
 }

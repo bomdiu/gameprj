@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.EventSystems; // REQUIRED for UI detection
+using UnityEngine.EventSystems;
 
 public class PlayerCombat : MonoBehaviour
 {
@@ -15,7 +15,6 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float cooldown2to3 = 0.15f;
     [SerializeField] private float cooldown3to1 = 0.4f;
     [SerializeField] private float comboWindow = 0.8f;
-    [SerializeField] private float recoveryTime = 0.1f;
 
     [Header("Input Buffering")]
     [Tooltip("How close to the end of an animation can the player 'queue' the next hit?")]
@@ -101,19 +100,14 @@ public class PlayerCombat : MonoBehaviour
 
     void Update()
     {
-        // --- UPDATED INPUT CHECK ---
         if (Input.GetMouseButtonDown(0))
         {
-            // 1. Block if game is paused
             if (PauseMenu.GameIsPaused) return;
-
-            // 2. Block if clicking on UI (Buttons, Upgrade Cards, etc.)
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
             HandleInput();
         }
 
-        // Safety check to end attack if animator is in Idle/Walk
         if (isAttacking && Time.time - lastAttackStartTime > 0.05f)
         {
             AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
@@ -186,6 +180,12 @@ public class PlayerCombat : MonoBehaviour
         if (movement != null) movement.canMove = false;
 
         rb.velocity = Vector2.zero;
+        
+        // --- FIX START: Lock Position ---
+        // Freezing All ensures the physics engine cannot push the player
+        rb.constraints = RigidbodyConstraints2D.FreezeAll;
+        // --- FIX END ---
+
         lungeCoroutine = StartCoroutine(PerformLunge());
     }
 
@@ -195,12 +195,10 @@ public class PlayerCombat : MonoBehaviour
         mousePos.z = 0;
         Vector2 dir = (mousePos - transform.position).normalized;
 
-        // --- SỬA ĐỔI: Chỉ cho phép Flip khi bắt đầu Combo (Step 1) ---
         if (comboStep == 1)
         {
             FlipCharacter(dir.x);
         }
-        // --- KẾT THÚC SỬA ĐỔI ---
 
         RotateCurrentHitbox(dir);
 
@@ -210,6 +208,15 @@ public class PlayerCombat : MonoBehaviour
         float speed = dist / lungeDuration;
 
         float timer = 0;
+        
+        // Note: Even though constraints are frozen, we can still set velocity manually
+        // However, to ensure the lunge works while constraints are technically 'Frozen' for collision
+        // we might need to rely on the fact that 'velocity' assignment overrides constraints momentarily in some versions,
+        // BUT simpler: Unfreeze X/Y for the lunge, then refreeze.
+        
+        // Let's modify the Freeze logic slightly to allow the lunge:
+        rb.constraints = RigidbodyConstraints2D.FreezeRotation; // Allow moving for the lunge itself
+
         while (timer < lungeDuration)
         {
             rb.velocity = dir * speed;
@@ -218,6 +225,11 @@ public class PlayerCombat : MonoBehaviour
         }
 
         rb.velocity = Vector2.zero;
+        
+        // --- RE-FREEZE after lunge is done but before recovery is over ---
+        // This prevents pushing during the recovery animation
+        rb.constraints = RigidbodyConstraints2D.FreezeAll;
+        
         lungeCoroutine = null;
     }
 
@@ -271,7 +283,17 @@ public class PlayerCombat : MonoBehaviour
 
     private IEnumerator RecoveryRoutine()
     {
-        yield return new WaitForSeconds(recoveryTime);
+        float waitTime = (movement != null) ? movement.directionLockTime : 0.1f;
+        
+        // Ensure we are still frozen during the wait
+        rb.constraints = RigidbodyConstraints2D.FreezeAll;
+
+        yield return new WaitForSeconds(waitTime);
+
+        // --- FIX END: Unlock Position ---
+        // Revert to just freezing rotation (allowing movement)
+        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+        
         if (movement != null && !isAttacking) movement.canMove = true;
     }
 
@@ -282,8 +304,7 @@ public class PlayerCombat : MonoBehaviour
 
         if (current != null)
         {
-            Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
-            bool aimingRight = mousePos.x >= transform.position.x;
+            bool aimingRight = isFacingRight;
 
             GameObject prefabToSpawn = aimingRight ? GetRightPrefab() : GetLeftPrefab();
 

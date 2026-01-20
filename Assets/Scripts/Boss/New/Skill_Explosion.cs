@@ -8,8 +8,10 @@ public class Skill_Explosion : MonoBehaviour
     public ExplosionSkillData skillData;
     public GameObject indicatorPrefab; // Prefab rỗng có gắn script ExplosionIndicator
 
+    [Header("Damage Settings")]
+    public LayerMask targetLayer; // Chọn Layer "Player" ở đây
+
     public float currentCooldown = 0f;
-    // Thêm dòng này vào bất kỳ chỗ nào trong class skill
     public bool IsReady => currentCooldown <= 0;
 
     private void Update()
@@ -35,15 +37,18 @@ public class Skill_Explosion : MonoBehaviour
         {
             Vector2 spawnPos = boss.player.position; // Lấy vị trí Player hiện tại
             
-            // Tạo Indicator
+            // 1. Tạo Indicator (Hiệu ứng cảnh báo)
             GameObject newMine = Instantiate(indicatorPrefab, spawnPos, Quaternion.identity);
             
-            // Setup dữ liệu
+            // Setup dữ liệu visual
             ExplosionIndicator mineScript = newMine.GetComponent<ExplosionIndicator>();
             if (mineScript != null)
             {
                 mineScript.Setup(skillData);
             }
+
+            // 2. Bắt đầu đếm ngược để gây Damage (Logic chạy ngầm song song với Visual)
+            StartCoroutine(HandleExplosionDamage(spawnPos));
 
             // Đợi trước khi rải quả tiếp theo
             yield return new WaitForSeconds(skillData.spawnInterval);
@@ -56,5 +61,39 @@ public class Skill_Explosion : MonoBehaviour
 
         boss.ChangeState(BossState.Idle);
         currentCooldown = skillData.autoCooldown;
+    }
+
+    // --- HÀM MỚI: XỬ LÝ GÂY SÁT THƯƠNG ---
+    private IEnumerator HandleExplosionDamage(Vector2 position)
+    {
+        // Chờ thời gian nổ (phải khớp với thời gian visual bên Indicator)
+        // Giả sử trong skillData bạn có biến explosionDelay
+        yield return new WaitForSeconds(skillData.explosionDelay);
+
+        // Tạo vòng tròn kiểm tra va chạm tại vị trí đặt mìn
+        // Giả sử trong skillData có biến explosionRadius
+        Collider2D hit = Physics2D.OverlapCircle(position, skillData.explosionRadius, targetLayer);
+
+        if (hit != null)
+        {
+            // Tìm component máu của Player (PlayerStats hoặc PlayerHealth)
+            PlayerStats player = hit.GetComponent<PlayerStats>();
+            if (player != null)
+            {
+                // Giả sử trong skillData có biến damage
+                player.TakeDamage(skillData.damage);
+            }
+        }
+    }
+    
+    // Vẽ vòng tròn nổ trong Scene để dễ căn chỉnh (Optional)
+    private void OnDrawGizmosSelected()
+    {
+        if (skillData != null)
+        {
+            Gizmos.color = Color.red;
+            // Vẽ minh họa tại vị trí boss đứng
+            Gizmos.DrawWireSphere(transform.position, skillData.explosionRadius);
+        }
     }
 }

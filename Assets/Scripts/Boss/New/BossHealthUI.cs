@@ -1,26 +1,26 @@
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UI; // Cần thư viện này
 
 public class BossHealthUI : MonoBehaviour
 {
-    public Slider healthSlider; // Kéo cái Slider vào đây
-    public float updateSpeed = 5f; // Tốc độ trượt của thanh máu (cho mượt)
+    // Đổi từ Slider sang Image
+    public Image healthBarFill; 
+    public float updateSpeed = 5f;
 
-    private float targetValue = 1f;
+    private float targetFillAmount = 1f;
 
     private void Update()
     {
-        // Hiệu ứng tụt máu từ từ (Lerp) cho đẹp mắt
-        if (healthSlider.value != targetValue)
+        // Hiệu ứng tụt máu từ từ
+        if (healthBarFill.fillAmount != targetFillAmount)
         {
-            healthSlider.value = Mathf.Lerp(healthSlider.value, targetValue, Time.deltaTime * updateSpeed);
+            healthBarFill.fillAmount = Mathf.Lerp(healthBarFill.fillAmount, targetFillAmount, Time.deltaTime * updateSpeed);
         }
     }
 
-    // Hàm này sẽ được gọi từ BossHealth
     public void UpdateHealth(float currentHealth, float maxHealth)
     {
-        // Chuyển đổi sang tỉ lệ 0 - 1
-        targetValue = currentHealth / maxHealth;
+        // Tính tỉ lệ 0 - 1
+        targetFillAmount = currentHealth / maxHealth;
     }
 }

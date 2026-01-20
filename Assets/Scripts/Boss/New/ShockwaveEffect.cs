@@ -1,107 +1,135 @@
 using UnityEngine;
-using System.Collections.Generic;
+using System.Collections;
 
 public class ShockwaveEffect : MonoBehaviour
 {
     private ShockwaveSkillData data;
     private float currentRadius = 0f;
-    private bool isExpanding = false;
-
-    // Components
     private LineRenderer lineRend;
-    private CircleCollider2D col;
-    
-    // Danh sách để đảm bảo mỗi lần sóng quét qua chỉ đánh trúng player 1 lần
-    private List<GameObject> hitTargets = new List<GameObject>();
+    private PolygonCollider2D polyCol; 
+
+    private int segments = 60; 
 
     public void Setup(ShockwaveSkillData skillData)
     {
         data = skillData;
         
-        // 1. Setup LineRenderer
-        lineRend = gameObject.AddComponent<LineRenderer>();
-        lineRend.useWorldSpace = true; // Vẽ theo tọa độ thế giới nhưng cập nhật vị trí theo tâm
+        // Init Components
+        lineRend = GetComponent<LineRenderer>();
+        if (lineRend == null) lineRend = gameObject.AddComponent<LineRenderer>();
+        
+        polyCol = GetComponent<PolygonCollider2D>();
+        if (polyCol == null) polyCol = gameObject.AddComponent<PolygonCollider2D>();
+        polyCol.isTrigger = true; 
+
+        // Visual Setup
+        lineRend.useWorldSpace = false;
         lineRend.loop = true;
-        lineRend.positionCount = data.segments;
-        lineRend.startColor = data.waveColor;
-        lineRend.endColor = new Color(data.waveColor.r, data.waveColor.g, data.waveColor.b, 0f); // Mờ dần ở viền ngoài
+        lineRend.positionCount = segments;
+        
+        // Use your color / material
         lineRend.material = new Material(Shader.Find("Sprites/Default"));
-        lineRend.startWidth = data.startWidth;
-        lineRend.endWidth = data.startWidth;
-
-        // 2. Setup Collider
-        col = gameObject.AddComponent<CircleCollider2D>();
-        col.isTrigger = true;
-        col.radius = 0.1f; // Bắt đầu nhỏ xíu
-
-        isExpanding = true;
+        lineRend.startColor = data.waveColor;
+        lineRend.endColor = data.waveColor;
+        
+        StartCoroutine(ExpandRoutine());
+        
+        // Destroy calculation using "expansionSpeed"
+        float duration = data.maxRadius / data.expansionSpeed;
+        Destroy(gameObject, duration + 0.5f);
     }
 
-    void Update()
+    private IEnumerator ExpandRoutine()
     {
-        if (!isExpanding) return;
+        while (currentRadius < data.maxRadius)
+        {
+            // Logic using "expansionSpeed"
+            currentRadius += data.expansionSpeed * Time.deltaTime;
+            UpdateVisualsAndHitbox();
+            yield return null;
+        }
+    }
 
-        // --- LOGIC MỞ RỘNG ---
-        // Tăng bán kính theo tốc độ
-        currentRadius += data.expansionSpeed * Time.deltaTime;
-
-        // Cập nhật Collider
-        col.radius = currentRadius;
-
-        // Cập nhật độ dày nét vẽ (Lerp từ dày sang mỏng/to dần)
+    private void UpdateVisualsAndHitbox()
+    {
+        // Calculate current width based on progress
         float progress = currentRadius / data.maxRadius;
         float currentWidth = Mathf.Lerp(data.startWidth, data.endWidth, progress);
+
         lineRend.startWidth = currentWidth;
         lineRend.endWidth = currentWidth;
 
-        // Cập nhật Visual (Vẽ vòng tròn)
-        DrawCircle(currentRadius);
+        Vector3[] linePoints = new Vector3[segments];
+        float angleStep = 360f / segments;
 
-        // --- KIỂM TRA KẾT THÚC ---
-        if (currentRadius >= data.maxRadius)
-        {
-            Destroy(gameObject); // Sóng tan biến
-        }
-    }
-
-    void DrawCircle(float radius)
-    {
-        float angleStep = 360f / data.segments;
-        for (int i = 0; i < data.segments; i++)
+        // Draw Visuals
+        for (int i = 0; i < segments; i++)
         {
             float angle = Mathf.Deg2Rad * i * angleStep;
-            float x = Mathf.Sin(angle) * radius;
-            float y = Mathf.Cos(angle) * radius;
-            
-            // Vẽ xung quanh tâm của object này (tức là tâm Boss)
-            lineRend.SetPosition(i, transform.position + new Vector3(x, y, 0));
+            linePoints[i] = new Vector3(Mathf.Sin(angle) * currentRadius, Mathf.Cos(angle) * currentRadius, 0);
         }
+        lineRend.SetPositions(linePoints);
+
+        // Update Hitbox (Donut Shape)
+        Vector2[] outerPoints = new Vector2[segments];
+        Vector2[] innerPoints = new Vector2[segments];
+        
+        float halfWidth = currentWidth * 0.5f;
+        float innerRadius = currentRadius - halfWidth;
+        float outerRadius = currentRadius + halfWidth;
+
+        for (int i = 0; i < segments; i++)
+        {
+            float angle = Mathf.Deg2Rad * i * angleStep;
+            float sin = Mathf.Sin(angle);
+            float cos = Mathf.Cos(angle);
+
+            outerPoints[i] = new Vector2(sin * outerRadius, cos * outerRadius);
+            innerPoints[i] = new Vector2(sin * innerRadius, cos * innerRadius);
+        }
+
+        polyCol.pathCount = 2;
+        polyCol.SetPath(0, outerPoints);
+        polyCol.SetPath(1, innerPoints);
     }
 
+    // --- UPDATED COLLISION LOGIC ---
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        // Chỉ xử lý Player và chưa bị đánh trúng lần nào
-        if (collision.CompareTag("Player") && !hitTargets.Contains(collision.gameObject))
+        if (collision.CompareTag("Player"))
         {
-            hitTargets.Add(collision.gameObject);
-            
-            // 1. Gây Damage
-            Debug.Log("Shockwave hit Player! Damage: " + data.damage);
-            // collision.GetComponent<PlayerHealth>().TakeDamage(data.damage);
+            // 1. Deal Damage
+            PlayerStats playerStats = collision.GetComponent<PlayerStats>();
+            if (playerStats != null)
+            {
+                playerStats.TakeDamage(data.damage);
+            }
 
-            // 2. XỬ LÝ KNOCKBACK (ĐẨY LÙI)
+            // 2. Apply Knockback
             Rigidbody2D playerRb = collision.GetComponent<Rigidbody2D>();
             if (playerRb != null)
             {
-                // Tính hướng đẩy: Từ tâm Boss -> Hướng về phía Player
-                Vector2 knockbackDir = (collision.transform.position - transform.position).normalized;
+                // Calculate direction from Center of Wave -> Player
+                Vector2 direction = (collision.transform.position - transform.position).normalized;
                 
-                // Reset vận tốc cũ để lực đẩy có tác dụng tức thì (tránh trường hợp player đang lao tới làm giảm lực đẩy)
-                playerRb.velocity = Vector2.zero;
-                
-                // Thêm lực đẩy (Impulse = Lực tức thời)
-                playerRb.AddForce(knockbackDir * data.knockbackForce, ForceMode2D.Impulse);
+                // Apply physics force
+                playerRb.AddForce(direction * data.knockbackForce, ForceMode2D.Impulse);
+
+                // IMPORTANT: We must briefly disable PlayerMovement, otherwise Update() will overwrite this force immediately
+                PlayerMovement move = collision.GetComponent<PlayerMovement>();
+                if (move != null)
+                {
+                    StartCoroutine(KnockbackStun(move));
+                }
             }
         }
+    }
+
+    // Helper to disable movement for a split second so knockback works
+    private IEnumerator KnockbackStun(PlayerMovement move)
+    {
+        move.canMove = false;
+        yield return new WaitForSeconds(0.2f); // Stun duration (adjust if needed)
+        move.canMove = true;
     }
 }

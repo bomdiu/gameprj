@@ -4,28 +4,29 @@ using UnityEngine;
 public class ExplosionSkillData : ScriptableObject
 {
     [Header("Visual Resources")]
-    // Không cần Sprite nào nữa!
-    public GameObject explosionVFX; 
+    public GameObject explosionVFX; // Optional: If you spawn an explosion effect later
 
-    [Header("Cấu hình Kích thước (Vector2)")]
-    [Tooltip("X: Chiều rộng, Y: Chiều cao (Chỉnh khác nhau để tạo hình Elip)")]
+    [Header("Visual Settings (Indicator)")]
+    [Tooltip("Size of the red warning box. X = Width, Y = Height.")]
     public Vector2 areaSize = new Vector2(3f, 3f); 
     
-    [Header("Cấu hình Viền (Border)")]
-    public float borderWidth = 0.1f; // Độ dày nét vẽ
+    public float borderWidth = 0.1f; 
     public Color borderColor = new Color(1, 0, 0, 1);
-    
-    [Header("Cấu hình Lõi (Core)")]
     public Color coreColor = new Color(1, 0, 0, 0.5f);
-    
-    [Header("Hiệu ứng Nổ")]
     public float vfxScale = 1.0f;
 
-    [Header("Gameplay")]
-    public float damage = 15f;
-    public int explosionCount = 5;
-    public float spawnInterval = 0.3f;   
-    public float growthTime = 1.5f;      
+    [Header("Logic Settings (Hitbox)")]
+    [Tooltip("IMPORTANT: This controls the actual damage range. Should be roughly half of Area Size X.")]
+    public float explosionRadius = 1.5f; // Used in HandleExplosionDamage (Physics2D.OverlapCircle)
+
+    [Header("Gameplay Stats")]
+    public float damage = 15f;          // Used in HandleExplosionDamage
+    public int explosionCount = 5;      // Used in loop
+    public float spawnInterval = 0.3f;  // Used in loop delay
+    
+    [Tooltip("Time to wait before dealing damage (matches the visual growth time).")]
+    public float explosionDelay = 1.5f; // Used in HandleExplosionDamage (WaitForSeconds)
+    
     public float bossRecoverTime = 2.0f; 
     public float autoCooldown = 8.0f;
 }
