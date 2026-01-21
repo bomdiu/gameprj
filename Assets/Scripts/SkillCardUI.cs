@@ -4,7 +4,6 @@ using TMPro;
 
 public class SkillCardUI : MonoBehaviour
 {
-    // ... (Các khai báo UI cũ giữ nguyên) ...
     [Header("UI References")]
     public TextMeshProUGUI titleText;
     public TextMeshProUGUI descText;
@@ -16,30 +15,40 @@ public class SkillCardUI : MonoBehaviour
     {
         _data = data;
         
-        // Gán hình ảnh, text như cũ
         titleText.text = data.skillName;
         descText.text = data.description;
 
-        // Xóa sự kiện cũ và thêm sự kiện click mới
+        // Reset the button to ensure it's clean
         cardButton.onClick.RemoveAllListeners();
         cardButton.onClick.AddListener(OnCardSelected);
     }
 
     private void OnCardSelected()
     {
-        if (_data == null) return;
+        Debug.Log("1. Card Button physically clicked!");
 
-        // 1. Gửi lệnh nâng cấp sang nhân vật
+        if (_data == null) 
+        {
+            Debug.LogError("Data is null on this card!");
+            return;
+        }
+
+        // Apply stats
         if (PlayerStats.Instance != null)
         {
             PlayerStats.Instance.ApplyUpgrade(_data.upgradeType, _data.valueAmount);
+            Debug.Log("2. PlayerStats applied.");
+        }
+
+        // Trigger the Manager
+        if (UpgradeManager.Instance != null)
+        {
+            Debug.Log("3. Calling UpgradeManager.SelectUpgrade...");
+            UpgradeManager.Instance.SelectUpgrade(this.transform);
         }
         else
         {
-            Debug.LogError("Ko tìm thấy PlayerStats! gắn script vào nhân vật ddi");
+            Debug.LogError("UpgradeManager.Instance is MISSING!");
         }
-
-        // 2. Đóng bảng nâng cấp và tiếp tục game
-        UpgradeManager.Instance.CloseUpgradePanel();
     }
 }
