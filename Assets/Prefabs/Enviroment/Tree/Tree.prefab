@@ -582,7 +582,8 @@ PrefabInstance:
       value: tree1 (1)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 5077545596499073302, guid: 5a7fbffb6dfffbb40b4b03acf5a87c86, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5a7fbffb6dfffbb40b4b03acf5a87c86, type: 3}
@@ -660,7 +661,8 @@ PrefabInstance:
       value: tree1 (3)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 5077545596499073302, guid: 5a7fbffb6dfffbb40b4b03acf5a87c86, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5a7fbffb6dfffbb40b4b03acf5a87c86, type: 3}
