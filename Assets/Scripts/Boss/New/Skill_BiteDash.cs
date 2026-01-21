@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Skill_BiteDash : MonoBehaviour
 {
@@ -7,20 +8,29 @@ public class Skill_BiteDash : MonoBehaviour
     public BossController boss;
     public BossSkillData skillData;
 
-    // Các thành phần được tạo tự động
+    [Header("Cấu hình Va chạm")]
+    // Kéo Collider chính của Boss (cái nằm trên người Boss để nhận damage/va chạm tường) vào đây
+    public Collider2D bossMainCollider; 
+
+    // Các thành phần visual tự tạo
     private LineRenderer lineRend;
     private GameObject hitboxObj;
     private BoxCollider2D hitboxCol;
 
     public float currentCooldown = 0f;
-    // Thêm dòng này vào bất kỳ chỗ nào trong class skill
     public bool IsReady => currentCooldown <= 0;
+
+    // Danh sách lưu tạm những con quái đã bị tắt va chạm
+    private List<Collider2D> ignoredMinions = new List<Collider2D>();
 
     private void Awake()
     {
-        // Tự động tạo LineRenderer và Hitbox khi game bắt đầu
         CreateLineRenderer();
         CreateHitbox();
+
+        // Tự động tìm Collider trên người boss nếu quên kéo
+        if (bossMainCollider == null)
+            bossMainCollider = boss.GetComponent<Collider2D>();
     }
 
     private void Update()
@@ -29,55 +39,7 @@ public class Skill_BiteDash : MonoBehaviour
         {
             currentCooldown -= Time.deltaTime;
         }
-      
     }
-
-    // --- PHẦN TẠO VISUAL (LINE RENDERER) ---
-    void CreateLineRenderer()
-    {
-        GameObject lineObj = new GameObject("TelegraphLine");
-        lineObj.transform.SetParent(transform);
-        lineObj.transform.localPosition = Vector3.zero;
-
-        lineRend = lineObj.AddComponent<LineRenderer>();
-        lineRend.useWorldSpace = true;
-        lineRend.positionCount = 2;
-        lineRend.sortingOrder = -1;
-        
-        if (skillData.lineMaterial != null)
-            lineRend.material = skillData.lineMaterial;
-        else
-            lineRend.material = new Material(Shader.Find("Sprites/Default"));
-
-        lineRend.enabled = false;
-    }
-
-    // --- PHẦN TẠO HITBOX ---
-    void CreateHitbox()
-    {
-        // 1. Tạo GameObject con
-        hitboxObj = new GameObject("DashHitbox");
-        hitboxObj.transform.SetParent(transform);
-        hitboxObj.transform.localPosition = Vector3.zero;
-
-        // 2. Thêm BoxCollider2D (Trigger)
-        hitboxCol = hitboxObj.AddComponent<BoxCollider2D>();
-        hitboxCol.isTrigger = true; // Quan trọng: Trigger để đi xuyên qua nhưng vẫn detect
-        
-        // 3. Thêm script xử lý va chạm
-        BossAttackHitbox handler = hitboxObj.AddComponent<BossAttackHitbox>();
-        handler.Setup(this); // Gửi tham chiếu script này sang để nó biết đường báo tin
-
-        hitboxObj.SetActive(false); // Mặc định tắt
-    }
-
-    // Hàm nhận tin báo từ Hitbox (Script BossAttackHitbox gọi cái này)
-    public void OnHitPlayer(GameObject playerObj)
-    {
-        Debug.Log("CHÉM TRÚNG PLAYER! Gây sát thương: " + skillData.damage);
-        // playerObj.GetComponent<PlayerHealth>().TakeDamage(skillData.damage);
-    }
-
 
     public void ActivateSkill()
     {
@@ -90,29 +52,33 @@ public class Skill_BiteDash : MonoBehaviour
         boss.ChangeState(BossState.Attacking);
         boss.rb.velocity = Vector2.zero;
 
-        // 1. KHÓA HƯỚNG
         Vector2 lockedDirection = (boss.player.position - transform.position).normalized;
         boss.FacePlayer(); 
         boss.PlayAnim("biteCast");
 
-        // 2. CHẠY TELEGRAPH
         yield return StartCoroutine(ShowLineTelegraph(lockedDirection));
 
-        // 3. TẤN CÔNG (DASH)
-        lineRend.enabled = false; // Tắt vạch đỏ
+        // === GIAI ĐOẠN DASH (QUAN TRỌNG) ===
+        lineRend.enabled = false;
         
-        // --- ĐỒNG BỘ HITBOX VỚI TELEGRAPH ---
+        // 1. Tắt va chạm với Minions xung quanh
+        IgnoreMinionCollision(true);
+
+        // 2. Bật Hitbox gây damage
         SyncHitboxToTelegraph(lockedDirection); 
-        hitboxObj.SetActive(true); // Bật hitbox lên
+        hitboxObj.SetActive(true); 
 
         boss.PlayAnim("biteAttack");
         boss.rb.velocity = lockedDirection * skillData.dashSpeed; 
 
         yield return new WaitForSeconds(skillData.dashDuration);
 
-        // 4. KẾT THÚC
+        // === KẾT THÚC ===
         boss.rb.velocity = Vector2.zero;
-        hitboxObj.SetActive(false); // Tắt hitbox đi
+        hitboxObj.SetActive(false); 
+
+        // 3. Bật lại va chạm (tránh lỗi boss đi xuyên quái mãi mãi)
+        IgnoreMinionCollision(false);
 
         boss.ChangeState(BossState.Recovering);
         boss.PlayAnim("Idle");
@@ -123,47 +89,107 @@ public class Skill_BiteDash : MonoBehaviour
         currentCooldown = skillData.autoCooldown;
     }
 
-    // Hàm xoay và chỉnh kích thước Hitbox
-    void SyncHitboxToTelegraph(Vector2 direction)
+    // --- HÀM XỬ LÝ ĐI XUYÊN QUÁI (MỚI) ---
+    void IgnoreMinionCollision(bool ignore)
     {
-        // 1. Xoay Hitbox theo hướng dash (Giống hệt cách xoay LineRenderer/Telegraph cũ)
+        if (ignore)
+        {
+            // BƯỚC 1: Tìm tất cả collider xung quanh boss (bán kính quét rộng 1 chút, ví dụ 20 đơn vị)
+            // Dùng LayerMask để chỉ quét layer Enemy cho nhẹ máy
+            int enemyLayerMask = 1 << LayerMask.NameToLayer("Enemy");
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 20f, enemyLayerMask);
+
+            ignoredMinions.Clear(); // Xóa danh sách cũ
+
+            foreach (var col in hits)
+            {
+                // Chỉ tắt va chạm nếu đó KHÔNG PHẢI là boss (vì boss cũng là layer Enemy)
+                if (col != bossMainCollider && !col.isTrigger) 
+                {
+                    // Tắt va chạm giữa Boss và con Minion này
+                    Physics2D.IgnoreCollision(bossMainCollider, col, true);
+                    
+                    // Lưu vào danh sách để tí nữa bật lại
+                    ignoredMinions.Add(col);
+                }
+            }
+        }
+        else
+        {
+            // BƯỚC 2: Bật lại va chạm cho những con đã lưu
+            foreach (var col in ignoredMinions)
+            {
+                // Kiểm tra null (đề phòng con minion bị chết/destroy trong lúc boss đang dash)
+                if (col != null)
+                {
+                    Physics2D.IgnoreCollision(bossMainCollider, col, false);
+                }
+            }
+            ignoredMinions.Clear();
+        }
+    }
+
+    // Đề phòng Boss chết hoặc bị tắt khi đang Dash -> Reset lại va chạm
+    private void OnDisable()
+    {
+        IgnoreMinionCollision(false);
+    }
+
+    // --- CÁC HÀM VISUAL ---
+    
+    void CreateLineRenderer() {
+        GameObject lineObj = new GameObject("TelegraphLine");
+        lineObj.transform.SetParent(transform);
+        lineObj.transform.localPosition = Vector3.zero;
+        lineRend = lineObj.AddComponent<LineRenderer>();
+        lineRend.useWorldSpace = true; lineRend.positionCount = 2; lineRend.sortingOrder = -1;
+        if (skillData.lineMaterial != null) lineRend.material = skillData.lineMaterial;
+        else lineRend.material = new Material(Shader.Find("Sprites/Default"));
+        lineRend.enabled = false;
+    }
+
+    void CreateHitbox() {
+        hitboxObj = new GameObject("DashHitbox");
+        hitboxObj.transform.SetParent(transform);
+        hitboxObj.transform.localPosition = Vector3.zero;
+        hitboxCol = hitboxObj.AddComponent<BoxCollider2D>();
+        hitboxCol.isTrigger = true; 
+        BossAttackHitbox handler = hitboxObj.AddComponent<BossAttackHitbox>();
+        handler.Setup(this); 
+        hitboxObj.SetActive(false); 
+    }
+
+    // --- NEW: DAMAGE LOGIC HERE ---
+    public void OnHitPlayer(GameObject playerObj) {
+        // Find the PlayerStats component on the player object and apply damage
+        PlayerStats stats = playerObj.GetComponent<PlayerStats>();
+        if (stats != null)
+        {
+            stats.TakeDamage(skillData.damage);
+            // Optional: Apply knockback or other effects here if needed
+        }
+    }
+    // ------------------------------
+
+    void SyncHitboxToTelegraph(Vector2 direction) {
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         hitboxObj.transform.rotation = Quaternion.Euler(0, 0, angle);
-
-        // 2. Chỉnh kích thước Hitbox
-        // Size X: Độ dài của hitbox (bạn có thể cho nó to hơn body boss 1 chút, ví dụ 1.5f)
-        // Size Y: Độ rộng -> LẤY TỪ SKILL DATA (Bằng đúng độ rộng vạch đỏ)
         hitboxCol.size = new Vector2(1.5f, skillData.width);
-
-        // 3. Offset (Dời tâm)
-        // Mặc định tâm hitbox trùng tâm boss. Nếu muốn hitbox nhô ra phía trước đầu boss, chỉnh offset X
         hitboxCol.offset = new Vector2(0.5f, 0); 
     }
 
-    private IEnumerator ShowLineTelegraph(Vector2 direction)
-    {
+    private IEnumerator ShowLineTelegraph(Vector2 direction) {
         lineRend.enabled = true;
-        lineRend.startWidth = skillData.width;
-        lineRend.endWidth = skillData.width;
-        lineRend.startColor = skillData.telegraphColor;
-        lineRend.endColor = skillData.telegraphColor;
-
-        Vector3 startPos = transform.position; 
-        startPos.z = 0; 
-
+        lineRend.startWidth = skillData.width; lineRend.endWidth = skillData.width;
+        lineRend.startColor = skillData.telegraphColor; lineRend.endColor = skillData.telegraphColor;
+        Vector3 startPos = transform.position; startPos.z = 0; 
         float timer = 0f;
-        while (timer < skillData.prepareTime)
-        {
+        while (timer < skillData.prepareTime) {
             timer += Time.deltaTime;
             float growthProgress = Mathf.Clamp01(timer / skillData.lineGrowthTime);
             float currentLength = Mathf.Lerp(0, skillData.maxLength, growthProgress);
-
-            Vector3 endPos = startPos + (Vector3)(direction * currentLength);
-            endPos.z = 0;
-
-            lineRend.SetPosition(0, transform.position); 
-            lineRend.SetPosition(1, endPos);
-
+            Vector3 endPos = startPos + (Vector3)(direction * currentLength); endPos.z = 0;
+            lineRend.SetPosition(0, transform.position); lineRend.SetPosition(1, endPos);
             yield return null;
         }
     }

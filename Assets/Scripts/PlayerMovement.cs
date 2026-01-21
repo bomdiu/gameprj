@@ -4,40 +4,49 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
-    public float dashDistance = 5f; 
+    public float dashDistance = 5f;
     public float dashDuration = 0.2f;
     public float dashCooldown = 1f;
 
+    // --- NEW VARIABLE HERE ---
+    [Header("Combat Interactions")]
+    [Tooltip("How long (in seconds) the player cannot move or turn after an attack.")]
+    public float directionLockTime = 0.25f; // Adjust this in Inspector to change lock duration
+    // -------------------------
+
     [Header("Dash VFX Settings")]
-    public GameObject dashEffectPrefab; 
-    public Vector3 vfxOffset;           
-    public float vfxDestroyTime = 0.5f; 
+    public GameObject dashEffectPrefab;
+    public Vector3 vfxOffset;
+    public float vfxDestroyTime = 0.5f;
 
     [Header("Ghost Trail Settings")]
-    public GameObject ghostPrefab;      
-    public float ghostDelay = 0.03f;    
-    public float ghostFadeTime = 0.3f;  
-    public Color ghostColor = new Color(0.8f, 0.8f, 0.8f, 0.6f); 
-    public Material ghostMaterial;      
+    public GameObject ghostPrefab;
+    public float ghostDelay = 0.03f;
+    public float ghostFadeTime = 0.3f;
+    public Color ghostColor = new Color(0.8f, 0.8f, 0.8f, 0.6f);
+    public Material ghostMaterial;
 
     [Header("Components")]
     public Animator anim;
-    [SerializeField] private Transform visualsTransform; 
+    [SerializeField] private Transform visualsTransform;
     private Rigidbody2D rb;
-    private Camera cam; 
-    private SpriteRenderer playerSR; 
+    private Camera cam;
+    private SpriteRenderer playerSR;
 
     private Vector2 moveInput;
     private bool isDashing = false;
     private float dashTimeLeft;
     private float lastDash = -10f;
-    private Vector2 dashDir; 
+    private Vector2 dashDir;
     private float ghostTimer;
+    
+    // Hidden variable to control movement state from other scripts
+    [HideInInspector] public bool canMove = true;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        cam = Camera.main; 
+        cam = Camera.main;
         if (anim == null) anim = GetComponentInChildren<Animator>();
         if (visualsTransform == null && anim != null) visualsTransform = anim.transform;
         if (visualsTransform != null) playerSR = visualsTransform.GetComponent<SpriteRenderer>();
@@ -70,6 +79,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void FaceCursor()
     {
+        // Stop flipping if movement is disabled (Attacking)
+        if (!canMove) return;
+
         if (visualsTransform == null) return;
         Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
         visualsTransform.localScale = new Vector3(mousePos.x > transform.position.x ? -1 : 1, 1, 1);
@@ -95,9 +107,8 @@ public class PlayerMovement : MonoBehaviour
         dashTimeLeft = dashDuration;
         lastDash = Time.time;
         dashDir = moveInput;
-        ghostTimer = 0; 
-        
-        // --- NEW: IGNORE ENEMY COLLISION ---
+        ghostTimer = 0;
+
         int enemyLayer = LayerMask.NameToLayer("Enemy");
         if (enemyLayer != -1)
         {
@@ -128,7 +139,7 @@ public class PlayerMovement : MonoBehaviour
     private void ApplyDashMovement()
     {
         rb.velocity = dashDir * (dashDistance / dashDuration);
-        
+
         ghostTimer -= Time.fixedDeltaTime;
         if (ghostTimer <= 0) { SpawnGhost(); ghostTimer = ghostDelay; }
 
@@ -138,7 +149,6 @@ public class PlayerMovement : MonoBehaviour
             isDashing = false;
             rb.velocity = Vector2.zero;
 
-            // --- NEW: RE-ENABLE ENEMY COLLISION ---
             int enemyLayer = LayerMask.NameToLayer("Enemy");
             if (enemyLayer != -1)
             {
@@ -146,6 +156,4 @@ public class PlayerMovement : MonoBehaviour
             }
         }
     }
-
-    [HideInInspector] public bool canMove = true; 
 }

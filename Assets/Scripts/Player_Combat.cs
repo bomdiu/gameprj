@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.EventSystems; // REQUIRED for UI detection
+using UnityEngine.EventSystems;
 
 public class PlayerCombat : MonoBehaviour
 {
@@ -11,28 +11,27 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] public int damage3 = 25;
 
     [Header("Combo Timing")]
-    [SerializeField] private float cooldown1to2 = 0.12f; 
-    [SerializeField] private float cooldown2to3 = 0.15f; 
-    [SerializeField] private float cooldown3to1 = 0.4f; 
-    [SerializeField] private float comboWindow = 0.8f;   
-    [SerializeField] private float recoveryTime = 0.1f; 
+    [SerializeField] private float cooldown1to2 = 0.12f;
+    [SerializeField] private float cooldown2to3 = 0.15f;
+    [SerializeField] private float cooldown3to1 = 0.4f;
+    [SerializeField] private float comboWindow = 0.8f;
 
     [Header("Input Buffering")]
     [Tooltip("How close to the end of an animation can the player 'queue' the next hit?")]
-    [SerializeField] private float bufferWindow = 0.25f; 
+    [SerializeField] private float bufferWindow = 0.25f;
     private bool hasBufferedInput = false;
     private float lastBufferedTime;
 
     [Header("Lunge Settings")]
-    [SerializeField] private float lungeDistance = 3.0f;      
-    [SerializeField] private float finalLungeDistance = 5.0f; 
-    [SerializeField] private float lungeDuration = 0.12f;     
+    [SerializeField] private float lungeDistance = 3.0f;
+    [SerializeField] private float finalLungeDistance = 5.0f;
+    [SerializeField] private float lungeDuration = 0.12f;
 
     [Header("Hitbox Anchors")]
-    [SerializeField] private GameObject hitbox1; 
-    [SerializeField] private GameObject hitbox2; 
-    [SerializeField] private GameObject hitbox3; 
-    
+    [SerializeField] private GameObject hitbox1;
+    [SerializeField] private GameObject hitbox2;
+    [SerializeField] private GameObject hitbox3;
+
     [Header("VFX Prefabs (Right Facing)")]
     [SerializeField] private GameObject splashRight1;
     [SerializeField] private GameObject splashRight2;
@@ -65,16 +64,16 @@ public class PlayerCombat : MonoBehaviour
 
     [Header("References")]
     [SerializeField] public Animator anim;
-    [SerializeField] private Transform visualsTransform; 
+    [SerializeField] private Transform visualsTransform;
     [SerializeField] private PlayerMovement movement;
     private Rigidbody2D rb;
     private Camera cam;
 
     private int comboStep = 0;
-    private float lastAttackStartTime; 
-    public float lastAttackEndTime;   
+    private float lastAttackStartTime;
+    public float lastAttackEndTime;
     public bool isAttacking = false;
-    private bool isFacingRight = true; 
+    private bool isFacingRight = true;
     private Coroutine lungeCoroutine;
     private Coroutine recoveryCoroutine;
 
@@ -86,11 +85,11 @@ public class PlayerCombat : MonoBehaviour
 
         if (anim == null) anim = GetComponentInChildren<Animator>();
         if (movement == null) movement = GetComponent<PlayerMovement>();
-        
+
         DisableAllHitboxes();
     }
 
-    public void StartAttackMove() { } 
+    public void StartAttackMove() { }
 
     public int GetCurrentDamage()
     {
@@ -101,20 +100,15 @@ public class PlayerCombat : MonoBehaviour
 
     void Update()
     {
-        // --- UPDATED INPUT CHECK ---
-        if (Input.GetMouseButtonDown(0)) 
+        if (Input.GetMouseButtonDown(0))
         {
-            // 1. Block if game is paused
             if (PauseMenu.GameIsPaused) return;
-
-            // 2. Block if clicking on UI (Buttons, Upgrade Cards, etc.)
             if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
             HandleInput();
         }
 
-        // Safety check to end attack if animator is in Idle/Walk
-        if (isAttacking && Time.time - lastAttackStartTime > 0.05f) 
+        if (isAttacking && Time.time - lastAttackStartTime > 0.05f)
         {
             AnimatorStateInfo state = anim.GetCurrentAnimatorStateInfo(0);
             if (state.IsName("Idle") || state.IsName("Walk")) EndAttackMove();
@@ -123,7 +117,7 @@ public class PlayerCombat : MonoBehaviour
         if (!isAttacking)
         {
             TryExecuteBufferedAttack();
-            
+
             if (comboStep > 0 && Time.time - lastAttackEndTime > comboWindow)
             {
                 comboStep = 0;
@@ -168,11 +162,11 @@ public class PlayerCombat : MonoBehaviour
 
     private void PrepareAttack()
     {
-        hasBufferedInput = false; 
+        hasBufferedInput = false;
 
         if (lungeCoroutine != null) StopCoroutine(lungeCoroutine);
         if (recoveryCoroutine != null) StopCoroutine(recoveryCoroutine);
-        
+
         bool inComboChain = (Time.time - lastAttackEndTime <= comboWindow);
         comboStep = (inComboChain && comboStep < 3) ? comboStep + 1 : 1;
 
@@ -182,10 +176,16 @@ public class PlayerCombat : MonoBehaviour
     private void ExecuteAttack()
     {
         isAttacking = true;
-        lastAttackStartTime = Time.time; 
+        lastAttackStartTime = Time.time;
         if (movement != null) movement.canMove = false;
 
-        rb.velocity = Vector2.zero; 
+        rb.velocity = Vector2.zero;
+        
+        // --- FIX START: Lock Position ---
+        // Freezing All ensures the physics engine cannot push the player
+        rb.constraints = RigidbodyConstraints2D.FreezeAll;
+        // --- FIX END ---
+
         lungeCoroutine = StartCoroutine(PerformLunge());
     }
 
@@ -195,7 +195,11 @@ public class PlayerCombat : MonoBehaviour
         mousePos.z = 0;
         Vector2 dir = (mousePos - transform.position).normalized;
 
-        FlipCharacter(dir.x);
+        if (comboStep == 1)
+        {
+            FlipCharacter(dir.x);
+        }
+
         RotateCurrentHitbox(dir);
 
         anim.Play("Attack" + comboStep, 0, 0f);
@@ -204,6 +208,15 @@ public class PlayerCombat : MonoBehaviour
         float speed = dist / lungeDuration;
 
         float timer = 0;
+        
+        // Note: Even though constraints are frozen, we can still set velocity manually
+        // However, to ensure the lunge works while constraints are technically 'Frozen' for collision
+        // we might need to rely on the fact that 'velocity' assignment overrides constraints momentarily in some versions,
+        // BUT simpler: Unfreeze X/Y for the lunge, then refreeze.
+        
+        // Let's modify the Freeze logic slightly to allow the lunge:
+        rb.constraints = RigidbodyConstraints2D.FreezeRotation; // Allow moving for the lunge itself
+
         while (timer < lungeDuration)
         {
             rb.velocity = dir * speed;
@@ -212,6 +225,11 @@ public class PlayerCombat : MonoBehaviour
         }
 
         rb.velocity = Vector2.zero;
+        
+        // --- RE-FREEZE after lunge is done but before recovery is over ---
+        // This prevents pushing during the recovery animation
+        rb.constraints = RigidbodyConstraints2D.FreezeAll;
+        
         lungeCoroutine = null;
     }
 
@@ -236,27 +254,27 @@ public class PlayerCombat : MonoBehaviour
     {
         if (visualsTransform == null) return;
 
-        if (xDir > 0.1f) 
+        if (xDir > 0.1f)
         {
             visualsTransform.localScale = new Vector3(-1, 1, 1);
             isFacingRight = true;
         }
-        else if (xDir < -0.1f) 
+        else if (xDir < -0.1f)
         {
             visualsTransform.localScale = new Vector3(1, 1, 1);
             isFacingRight = false;
         }
     }
 
-    public void EndAttackMove() 
-    { 
+    public void EndAttackMove()
+    {
         if (!isAttacking) return;
         isAttacking = false;
-        lastAttackEndTime = Time.time; 
-        
+        lastAttackEndTime = Time.time;
+
         if (lungeCoroutine != null) StopCoroutine(lungeCoroutine);
         rb.velocity = Vector2.zero;
-        
+
         DisableAllHitboxes();
 
         if (recoveryCoroutine != null) StopCoroutine(recoveryCoroutine);
@@ -265,19 +283,28 @@ public class PlayerCombat : MonoBehaviour
 
     private IEnumerator RecoveryRoutine()
     {
-        yield return new WaitForSeconds(recoveryTime);
+        float waitTime = (movement != null) ? movement.directionLockTime : 0.1f;
+        
+        // Ensure we are still frozen during the wait
+        rb.constraints = RigidbodyConstraints2D.FreezeAll;
+
+        yield return new WaitForSeconds(waitTime);
+
+        // --- FIX END: Unlock Position ---
+        // Revert to just freezing rotation (allowing movement)
+        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+        
         if (movement != null && !isAttacking) movement.canMove = true;
     }
 
-    public void TriggerHitbox() 
-    { 
+    public void TriggerHitbox()
+    {
         DisableAllHitboxes();
         GameObject current = GetCurrentHitboxAnchor();
-        
+
         if (current != null)
         {
-            Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
-            bool aimingRight = mousePos.x >= transform.position.x;
+            bool aimingRight = isFacingRight;
 
             GameObject prefabToSpawn = aimingRight ? GetRightPrefab() : GetLeftPrefab();
 
@@ -288,7 +315,7 @@ public class PlayerCombat : MonoBehaviour
 
                 Vector3 spawnPosition = current.transform.position + (current.transform.right * offset);
                 Quaternion spawnRotation = current.transform.rotation * Quaternion.Euler(0, 0, rotation);
-                
+
                 GameObject vfx = Instantiate(prefabToSpawn, spawnPosition, spawnRotation);
 
                 if (comboStep == 3)
@@ -301,7 +328,7 @@ public class PlayerCombat : MonoBehaviour
             {
                 GameObject child = current.transform.GetChild(0).gameObject;
                 child.SetActive(true);
-                
+
                 DamageDealer dealer = child.GetComponent<DamageDealer>();
                 if (dealer != null) dealer.ResetHitList();
             }
@@ -350,8 +377,8 @@ public class PlayerCombat : MonoBehaviour
         return rotationLeft3;
     }
 
-    public void DisableAllHitboxes() 
-    { 
+    public void DisableAllHitboxes()
+    {
         if (hitbox1 != null && hitbox1.transform.childCount > 0) hitbox1.transform.GetChild(0).gameObject.SetActive(false);
         if (hitbox2 != null && hitbox2.transform.childCount > 0) hitbox2.transform.GetChild(0).gameObject.SetActive(false);
         if (hitbox3 != null && hitbox3.transform.childCount > 0) hitbox3.transform.GetChild(0).gameObject.SetActive(false);
