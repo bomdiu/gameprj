@@ -639,6 +639,7 @@ MonoBehaviour:
   dashDistance: 1.34
   dashDuration: 0.17
   dashCooldown: 1
+  directionLockTime: 0.25
   dashEffectPrefab: {fileID: 4396163641477242446, guid: 613ecc41e3f85d04f81b8c0c52703c7e, type: 3}
   vfxOffset: {x: 0, y: -0.1, z: 0}
   vfxDestroyTime: 0.5
@@ -684,7 +685,6 @@ MonoBehaviour:
   cooldown2to3: 0.2
   cooldown3to1: 0.5
   comboWindow: 0.9
-  recoveryTime: 0.1
   bufferWindow: 0.7
   lungeDistance: 0.2
   finalLungeDistance: 0.4
