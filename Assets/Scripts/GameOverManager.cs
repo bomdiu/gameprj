@@ -6,24 +6,26 @@ using System.Collections;
 public class GameOverManager : MonoBehaviour
 {
     [Header("UI References")]
-    public GameObject gameOverCanvas; // Kéo GameOverCanvas vào
-    public Image blackScreen;         // Kéo Panel BlackScreen vào
-    public CanvasGroup contentGroup;  // Kéo ContentContainer vào
+    public GameObject gameOverCanvas;
+    public Image blackScreen;
+    public CanvasGroup contentGroup;
 
     [Header("Effects")]
-    public ParticleSystem deathParticles; // Kéo Particle System vào
-    
-    // Singleton để gọi dễ dàng từ bất cứ đâu
+    public ParticleSystem deathParticles;
+
+    [Header("Audio Settings")]
+    public AudioSource gameOverSource; // Kéo AudioSource của Canvas vào đây
+    public AudioClip gameOverMusic;    // Kéo file nhạc buồn vào đây
+    public float fadeDuration = 1.5f;  // Thời gian chuyển đổi âm thanh
+
     public static GameOverManager Instance;
 
     void Awake()
     {
         if (Instance == null) Instance = this;
-        // Đảm bảo ban đầu ẩn hết
-        gameOverCanvas.SetActive(false); 
+        gameOverCanvas.SetActive(false);
     }
 
-    // Hàm này được gọi khi Player hết máu
     public void TriggerDeath(Transform playerTransform)
     {
         StartCoroutine(DeathSequence(playerTransform));
@@ -31,62 +33,89 @@ public class GameOverManager : MonoBehaviour
 
     IEnumerator DeathSequence(Transform player)
     {
-        // 1. Kích hoạt Canvas nhưng chưa hiện nội dung
+        // 1. Setup ban đầu
         gameOverCanvas.SetActive(true);
-        blackScreen.color = new Color(0, 0, 0, 0); // Trong suốt
+        blackScreen.color = new Color(0, 0, 0, 0);
         contentGroup.alpha = 0;
 
-        // 2. FREEZE GAME (Dừng mọi hoạt động của quái vật/đạn)
+        // 2. XỬ LÝ ÂM THANH (Mới) -------------
+        // Tìm nhạc nền game đang phát (thường gắn ở Camera chính) và tắt dần
+        AudioSource currentBGM = Camera.main.GetComponent<AudioSource>();
+        StartCoroutine(FadeOutBGM(currentBGM));
+
+        // Bật nhạc Game Over
+        if (gameOverSource != null && gameOverMusic != null)
+        {
+            gameOverSource.clip = gameOverMusic;
+            gameOverSource.Play();
+            // Optional: Nếu muốn fade in nhạc game over thì viết thêm coroutine, 
+            // nhưng thường nhạc game over nên vang lên ngay để tạo cảm xúc.
+        }
+        // -------------------------------------
+
+        // 3. FREEZE GAME
         Time.timeScale = 0f;
 
-        // 3. Xử lý Nhân vật "Tan biến"
-        // Di chuyển Particle đến vị trí nhân vật
+        // 4. Hiệu ứng tan biến
         deathParticles.transform.position = player.position;
-        deathParticles.Play(); // Bùm!
+        deathParticles.Play();
 
-        // Ẩn Sprite nhân vật đi (giả vờ là đã tan biến)
         SpriteRenderer playerSprite = player.GetComponent<SpriteRenderer>();
         if (playerSprite != null) playerSprite.enabled = false;
 
-        // 4. Màn hình tối dần (Fade to Black)
-        // Lưu ý: Dùng WaitForSecondsRealtime vì Time.timeScale đang là 0
-        float duration = 1.5f;
+        // 5. Màn hình tối dần
         float timer = 0;
-
-        while (timer < duration)
+        while (timer < fadeDuration)
         {
-            timer += Time.unscaledDeltaTime; // Dùng thời gian thực
-            float alpha = Mathf.Lerp(0, 1, timer / duration);
+            timer += Time.unscaledDeltaTime;
+            float alpha = Mathf.Lerp(0, 1, timer / fadeDuration);
             blackScreen.color = new Color(0, 0, 0, alpha);
             yield return null;
         }
 
-        // 5. Hiện Pop-up Lựa chọn
+        // 6. Hiện Pop-up
         timer = 0;
-        duration = 1.0f; // Hiện chậm rãi trong 1 giây
-        while (timer < duration)
+        float popupDuration = 1.0f;
+        while (timer < popupDuration)
         {
             timer += Time.unscaledDeltaTime;
-            contentGroup.alpha = Mathf.Lerp(0, 1, timer / duration);
+            contentGroup.alpha = Mathf.Lerp(0, 1, timer / popupDuration);
             yield return null;
         }
-        
-        // Mở khóa chuột nếu game ẩn chuột
+
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
     }
 
-    // --- Các hàm cho Button ---
+    // Hàm phụ để tắt dần nhạc nền cũ cho êm tai
+    IEnumerator FadeOutBGM(AudioSource bgm)
+    {
+        if (bgm == null) yield break;
+
+        float startVolume = bgm.volume;
+        float timer = 0;
+
+        while (timer < fadeDuration)
+        {
+            timer += Time.unscaledDeltaTime;
+            // Giảm volume từ mức hiện tại về 0
+            bgm.volume = Mathf.Lerp(startVolume, 0, timer / fadeDuration);
+            yield return null;
+        }
+
+        bgm.Stop();
+        bgm.volume = startVolume; // Trả lại volume cũ để lần sau chơi lại ko bị mất tiếng
+    }
 
     public void RetryGame()
     {
-        Time.timeScale = 1f; // Trả lại thời gian trước khi load
-        SceneManager.LoadScene(1); // Load Scene chơi game (Index 1)
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); // Load lại màn hiện tại
     }
 
     public void BackToMenu()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(0); // Load Main Menu (Index 0)
+        SceneManager.LoadScene(0);
     }
 }
