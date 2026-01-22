@@ -101,6 +101,7 @@ GameObject:
   - component: {fileID: 4871103875037529390}
   - component: {fileID: 4644228289100215410}
   - component: {fileID: 6714055465141534241}
+  - component: {fileID: 5412694355420052636}
   m_Layer: 7
   m_Name: Eye
   m_TagString: Enemy
@@ -367,6 +368,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   flashDuration: 0.15
   maxFlashAmount: 1
+--- !u!114 &5412694355420052636
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7261602332989833055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db70e0ea77f5ac47a8f4565a9406397, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShadowGroup: 0
+  m_ComponentVersion: 1
+  m_HasRenderer: 1
+  m_UseRendererSilhouette: 1
+  m_CastsShadows: 1
+  m_SelfShadows: 0
+  m_ApplyToSortingLayers: 37bf8a84b9fefce05f64bcb80000000021fe1c253f8ca9512f2088eb89bfdd9259e9ab01d1e5bddb6faa835221889770
+  m_ShapePath:
+  - {x: -0.15939105, y: -0.13160825, z: 0}
+  - {x: -0.16510737, y: -0.06382012, z: 0}
+  - {x: -0.13928962, y: -0.036135912, z: 0}
+  - {x: 0.13273609, y: -0.046723902, z: 0}
+  - {x: 0.17875528, y: -0.10451555, z: 0}
+  - {x: 0.100913286, y: -0.125215, z: 0}
+  - {x: -0.022414804, y: -0.14873892, z: 0}
+  m_ShapePathHash: -1960788593
+  m_Mesh: {fileID: 0}
+  m_InstanceId: -140152
+  m_LocalBounds:
+    m_Center: {x: 0.006823957, y: -0.09243742, z: 0}
+    m_Extent: {x: 0.17193133, y: 0.056301504, z: 0}
 --- !u!1001 &2594335906916285152
 PrefabInstance:
   m_ObjectHideFlags: 0

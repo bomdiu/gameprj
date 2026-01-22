@@ -165,6 +165,7 @@ GameObject:
   - component: {fileID: 314818500570237702}
   - component: {fileID: 6420874876982855286}
   - component: {fileID: 5321351701982927811}
+  - component: {fileID: 3869002987374068598}
   m_Layer: 7
   m_Name: false persona
   m_TagString: Enemy
@@ -341,7 +342,7 @@ MonoBehaviour:
   isFacingRightByDefault: 0
   staticLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 1024
   staticLookAhead: 1
   staticAvoidForce: 1
   staticDetectionRadius: 0.9
@@ -429,7 +430,7 @@ MonoBehaviour:
   chargeRange: 3.08
   obstacleLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 1024
   enemyLayerName: Enemy
   damage: 10
   walkSpeed: 1
@@ -478,6 +479,38 @@ MonoBehaviour:
   deathVerticalPop: 0.5
   isFacingRightByDefault: 1
   currentHealth: 0
+--- !u!114 &3869002987374068598
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9157198380874731861}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db70e0ea77f5ac47a8f4565a9406397, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShadowGroup: 0
+  m_ComponentVersion: 1
+  m_HasRenderer: 1
+  m_UseRendererSilhouette: 1
+  m_CastsShadows: 1
+  m_SelfShadows: 0
+  m_ApplyToSortingLayers: 37bf8a84b9fefce05f64bcb80000000021fe1c253f8ca9512f2088eb89bfdd9259e9ab01d1e5bddb6faa835221889770
+  m_ShapePath:
+  - {x: -0.10740663, y: -0.32499948, z: 0}
+  - {x: -0.1026517, y: -0.29165152, z: 0}
+  - {x: 0.1102032, y: -0.28873077, z: 0}
+  - {x: 0.09067845, y: -0.32792026, z: 0}
+  - {x: 0.07911471, y: -0.38750532, z: 0}
+  - {x: -0.10644039, y: -0.3934713, z: 0}
+  m_ShapePathHash: 586578248
+  m_Mesh: {fileID: 0}
+  m_InstanceId: -175974
+  m_LocalBounds:
+    m_Center: {x: 0.0013982803, y: -0.34110105, z: 0}
+    m_Extent: {x: 0.10880491, y: 0.052370265, z: 0}
 --- !u!1001 &6574637333826401757
 PrefabInstance:
   m_ObjectHideFlags: 0

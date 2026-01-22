@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 799680554409428672}
   - component: {fileID: 2368162368489050516}
   - component: {fileID: 5417629622614539347}
+  - component: {fileID: 595373216858225129}
   m_Layer: 7
   m_Name: Bug
   m_TagString: Enemy
@@ -210,7 +211,7 @@ MonoBehaviour:
   isFacingRightByDefault: 0
   staticLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 1024
   staticLookAhead: 1
   staticAvoidForce: 1
   staticDetectionRadius: 0.9
@@ -285,6 +286,43 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   flashDuration: 0.15
   maxFlashAmount: 1
+--- !u!114 &595373216858225129
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 194198021288000057}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7db70e0ea77f5ac47a8f4565a9406397, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ShadowGroup: 0
+  m_ComponentVersion: 1
+  m_HasRenderer: 1
+  m_UseRendererSilhouette: 1
+  m_CastsShadows: 1
+  m_SelfShadows: 0
+  m_ApplyToSortingLayers: 37bf8a84b9fefce05f64bcb80000000021fe1c253f8ca9512f2088eb89bfdd9259e9ab01d1e5bddb6faa835221889770
+  m_ShapePath:
+  - {x: 0.10659766, y: -0.2513399, z: 0}
+  - {x: 0.19814503, y: -0.215271, z: 0}
+  - {x: 0.22849202, y: -0.1198585, z: 0}
+  - {x: 0.11649525, y: -0.06681728, z: 0}
+  - {x: 0.048139453, y: -0.037893772, z: 0}
+  - {x: -0.06536043, y: -0.055683374, z: 0}
+  - {x: -0.11578989, y: -0.06456232, z: 0}
+  - {x: -0.26206124, y: -0.1113534, z: 0}
+  - {x: -0.2462188, y: -0.19671416, z: 0}
+  - {x: -0.13958728, y: -0.26351833, z: 0}
+  - {x: -0.035669446, y: -0.25238442, z: 0}
+  m_ShapePathHash: -376215693
+  m_Mesh: {fileID: 0}
+  m_InstanceId: -175678
+  m_LocalBounds:
+    m_Center: {x: -0.016784608, y: -0.15070605, z: 0}
+    m_Extent: {x: 0.24527663, y: 0.11281228, z: 0}
 --- !u!1 &1537163069742805424
 GameObject:
   m_ObjectHideFlags: 0
