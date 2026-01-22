@@ -9,7 +9,7 @@ public class PauseMenu : MonoBehaviour
 
     void Update()
     {
-        // Nhấn Esc để mở/đóng menu
+        // Nhấn Esc để mở/đóng menu (Giữ nguyên)
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (GameIsPaused)
@@ -23,7 +23,7 @@ public class PauseMenu : MonoBehaviour
         }
     }
 
-    // 1. Chức năng Resume (Chơi tiếp)
+    // 1. Chức năng Resume (Chơi tiếp) - (Giữ nguyên)
     public void ResumeGame()
     {
         pausePanel.SetActive(false);
@@ -39,7 +39,7 @@ public class PauseMenu : MonoBehaviour
         GameIsPaused = true;
     }
 
-    // 2. Chức năng Settings (Chuyển bảng)
+    // 2. Chức năng Settings (Chuyển bảng) - (Giữ nguyên)
     public void OpenSettings()
     {
         pausePanel.SetActive(false);
@@ -52,10 +52,17 @@ public class PauseMenu : MonoBehaviour
         settingPanel.SetActive(false);
     }
 
-    // 3. Chức năng Main Menu
+    // 3. Chức năng Main Menu - (Giữ nguyên)
     public void LoadMainMenu()
     {
         Time.timeScale = 1f;          // RESET thời gian về 1 trước khi đổi cảnh
         SceneManager.LoadScene(0);    // Load Scene Main Menu (Index 0)
+    }
+
+    // 4. Chức năng Thoát Game (MỚI THÊM VÀO)
+    public void QuitGame()
+    {
+        Debug.Log("Quitting Game..."); // Dòng này để kiểm tra khi chạy trong Unity Editor
+        Application.Quit();            // Lệnh này chỉ hoạt động khi đã Build game ra file .exe
     }
 }
