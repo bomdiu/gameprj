@@ -1,69 +1,169 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Rendering.Universal;
 using System.Collections;
 
 public class UpgradeManager : MonoBehaviour
 {
     public static UpgradeManager Instance; 
 
-    [Header("Settings")]
+    [Header("UI References")]
     public GameObject upgradePanel; 
     public Transform cardsContainer; 
     public GameObject cardPrefab; 
     
-    [Header("Visual Effects")]
+    [Header("Menu Animation")]
     [SerializeField] private CanvasGroup panelCanvasGroup; 
     [SerializeField] private float animationDuration = 0.4f;
     [SerializeField] private Vector3 startScale = new Vector3(0.5f, 0.5f, 1f);
-    [SerializeField] private Vector3 targetScale = new Vector3(3.83f, 3.83f, 1f);
+    [SerializeField] private Vector3 targetScale = Vector3.one; 
 
-    [Header("Selection Burst VFX")]
+    [Header("Player References")]
+    [SerializeField] private PlayerMovement playerMovement;
+    [SerializeField] private PlayerHealth playerHealth;
+    [SerializeField] private PlayerCombat playerCombat;
+    public int currentMapIndex = 1; 
+
+    [Header("Visual Effects")]
     [SerializeField] private ParticleSystem selectionBurstPrefab; 
 
-    [Header("Portal Settings")]
-    public GameObject portalObject; 
+    [Header("Firefly Absorption Settings")]
+    [SerializeField] private ParticleSystem fireflySystem;   
+    [SerializeField] private Transform playerTransform;      
+    [SerializeField] private float transitionDelay = 1.2f;    
+    [SerializeField] private float vortexPullStrength = -40f; 
+    [SerializeField] [Range(0f, 1f)] private float fadeStartPercentage = 0.75f;
+
+    [Header("Light Glow Settings")]
+    [SerializeField] private Light2D playerGlowLight; 
+    [SerializeField] private float maxGlowIntensity = 1.4f; 
+    [SerializeField] private float maxOuterRadius = 4f;
+    [SerializeField] private float glowFadeDuration = 1.0f; 
 
     [Header("Data")]
     public List<SkillData> allSkills; 
 
     private void Awake()
     {
-        Instance = this;
-        if(upgradePanel != null) 
+        // Improved Singleton Pattern
+        if (Instance == null)
         {
-            upgradePanel.SetActive(false); 
-            if (panelCanvasGroup != null) panelCanvasGroup.alpha = 0;
+            Instance = this;
         }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        if(upgradePanel != null) upgradePanel.SetActive(false); 
         
-        if(portalObject != null) portalObject.SetActive(false); 
+        if (playerGlowLight != null) 
+        {
+            playerGlowLight.intensity = 0;
+            playerGlowLight.pointLightOuterRadius = 0;
+        }
     }
 
+    public void StartWaveEndTransition()
+    {
+        StartCoroutine(WaveEndRoutine()); 
+    }
+
+    private IEnumerator WaveEndRoutine()
+    {
+        Time.timeScale = 1f; 
+        var velocityModule = fireflySystem.velocityOverLifetime;
+        var emissionModule = fireflySystem.emission;
+        var colorModule = fireflySystem.colorOverLifetime; 
+        
+        velocityModule.enabled = true; 
+        velocityModule.space = ParticleSystemSimulationSpace.World; 
+        emissionModule.enabled = false; 
+        colorModule.enabled = true; 
+
+        float elapsed = 0f; 
+        while (elapsed < transitionDelay) 
+        {
+            float normalizedTime = elapsed / transitionDelay;
+            if (playerTransform != null)
+            {
+                fireflySystem.transform.position = playerTransform.position;
+                velocityModule.radial = vortexPullStrength;
+
+                if (playerGlowLight != null)
+                {
+                    playerGlowLight.intensity = normalizedTime * maxGlowIntensity;
+                    playerGlowLight.pointLightOuterRadius = normalizedTime * maxOuterRadius;
+                }
+
+                if (normalizedTime >= fadeStartPercentage)
+                {
+                    float fadeAlpha = Mathf.Lerp(1f, 0f, (normalizedTime - fadeStartPercentage) / (1f - fadeStartPercentage));
+                    Gradient grad = new Gradient();
+                    grad.SetKeys(
+                        new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                        new GradientAlphaKey[] { new GradientAlphaKey(fadeAlpha, 0f), new GradientAlphaKey(fadeAlpha, 1f) }
+                    );
+                    colorModule.color = grad;
+                }
+            }
+            elapsed += Time.unscaledDeltaTime; 
+            yield return null; 
+        }
+
+        if (playerGlowLight != null)
+        {
+            playerGlowLight.intensity = maxGlowIntensity;
+            playerGlowLight.pointLightOuterRadius = maxOuterRadius;
+        }
+
+        velocityModule.radial = 0f; 
+        emissionModule.enabled = true;
+        ShowUpgradeOptions(); 
+        StartCoroutine(FadeOutGlowLight());
+    }
+
+    private IEnumerator FadeOutGlowLight()
+    {
+        if (playerGlowLight == null) yield break;
+        float timer = 0f;
+        while (timer < glowFadeDuration)
+        {
+            timer += Time.unscaledDeltaTime; 
+            float progress = timer / glowFadeDuration;
+            playerGlowLight.intensity = Mathf.Lerp(maxGlowIntensity, 0f, progress);
+            playerGlowLight.pointLightOuterRadius = Mathf.Lerp(maxOuterRadius, 0f, progress);
+            yield return null;
+        }
+        playerGlowLight.intensity = 0f;
+    }
+    
     public void ShowUpgradeOptions()
     {
+        // Pause game and activate UI
         Time.timeScale = 0; 
         upgradePanel.SetActive(true);
 
+        // 1. CLEAR: Ensures no old cards remain
         foreach (Transform child in cardsContainer)
         {
             Destroy(child.gameObject);
         }
 
+        // 2. SPAWN: Correct single-loop spawning
         List<SkillData> randomSkills = GetRandomSkills(3);
-
         foreach (SkillData skill in randomSkills)
         {
             GameObject newCard = Instantiate(cardPrefab, cardsContainer);
             newCard.transform.localScale = Vector3.one; 
             
             SkillCardUI cardUI = newCard.GetComponent<SkillCardUI>();
-            if (cardUI != null)
-            {
-                cardUI.Setup(skill);
-            }
+            if (cardUI != null) cardUI.Setup(skill);
         }
 
-        StartCoroutine(AnimateEntrance());
+        StartCoroutine(AnimateEntrance()); 
     }
 
     private IEnumerator AnimateEntrance()
@@ -76,67 +176,56 @@ public class UpgradeManager : MonoBehaviour
         {
             timer += Time.unscaledDeltaTime; 
             float progress = timer / animationDuration;
-            float easedProgress = 1f - Mathf.Pow(1f - progress, 3);
-
-            if (panelCanvasGroup != null)
-                panelCanvasGroup.alpha = easedProgress;
-
+            float easedProgress = 1f - Mathf.Pow(1f - progress, 3); // Cubic ease-out
+            if (panelCanvasGroup != null) panelCanvasGroup.alpha = easedProgress;
             cardsContainer.localScale = Vector3.Lerp(startScale, targetScale, easedProgress);
             yield return null;
         }
 
         if (panelCanvasGroup != null) panelCanvasGroup.alpha = 1;
         cardsContainer.localScale = targetScale;
-
-        LayoutGroup group = cardsContainer.GetComponent<LayoutGroup>();
-        if (group != null)
-        {
-            group.enabled = false;
-            group.enabled = true;
-        }
     }
 
-    // UPDATED FUNCTION: Fixed for visibility and reliability
-    public void SelectUpgrade(Transform selectedCardTransform)
+    public void SelectUpgrade(SkillData skill, Transform selectedCardTransform)
     {
-        Debug.Log("SelectUpgrade triggered for card: " + selectedCardTransform.name);
-
-        if (selectionBurstPrefab == null)
+        // Apply skill effects based on type
+        switch (skill.upgradeType)
         {
-            Debug.LogError("CRITICAL: selectionBurstPrefab is NULL!");
-            StartCoroutine(DelayedClose());
-            return;
+            case SkillData.SkillType.HealthUp:
+                playerHealth.IncreaseMaxHealth((int)skill.valueAmount); break;
+            case SkillData.SkillType.DamageUp:
+                playerCombat.damage1 += (int)skill.valueAmount;
+                playerCombat.damage2 += (int)skill.valueAmount;
+                playerCombat.damage3 += (int)skill.valueAmount; break;
+            case SkillData.SkillType.DashCooldown:
+                playerMovement.dashCooldown = Mathf.Max(0.1f, playerMovement.dashCooldown - skill.valueAmount); break;
+            case SkillData.SkillType.SpeedUp:
+                playerMovement.speedMultiplier += skill.valueAmount; break;
+            case SkillData.SkillType.LifeSteal:
+                playerCombat.lifestealPercent += skill.valueAmount;
+                playerCombat.lifestealChance += skill.secondValue; break;
+            case SkillData.SkillType.SkillDamage:
+                playerCombat.skillDamageBonus += (int)skill.valueAmount; break;
+            case SkillData.SkillType.HealthRegen:
+                playerHealth.healthRegen += (int)skill.valueAmount; break;
+            case SkillData.SkillType.CritChance:
+                playerCombat.critChance += skill.valueAmount; break;
         }
 
-        // 1. Spawn as child initially to get the correct world position
-        ParticleSystem burst = Instantiate(selectionBurstPrefab, selectedCardTransform);
-        
-        if (burst != null)
+        // Visual feedback on selection
+        if (selectionBurstPrefab != null)
         {
-            // 2. Position it exactly on the card but pull it far toward the camera (Z = -500)
-            burst.transform.localPosition = new Vector3(0, 0, -500f);
-            burst.transform.localScale = Vector3.one; // Ensure it's not squashed
-            burst.transform.localRotation = Quaternion.identity;
-
-            // 3. Set to unscaled time so it plays while paused
+            ParticleSystem burst = Instantiate(selectionBurstPrefab, selectedCardTransform.position, Quaternion.identity);
             var main = burst.main;
-            main.useUnscaledTime = true; 
-
+            main.useUnscaledTime = true; // Essential for paused state
             burst.Play();
-
-            // 4. IMPORTANT: Move to Root so it doesn't get disabled when the panel closes
-            burst.transform.SetParent(null);
-            
-            // 5. Cleanup
             Destroy(burst.gameObject, 2f); 
         }
-
-        StartCoroutine(DelayedClose());
+        StartCoroutine(DelayedClose()); 
     }
 
     private IEnumerator DelayedClose()
     {
-        // Increased delay slightly so the player sees the start of the burst
         yield return new WaitForSecondsRealtime(0.15f); 
         CloseUpgradePanel();
     }
@@ -145,26 +234,35 @@ public class UpgradeManager : MonoBehaviour
     {
         upgradePanel.SetActive(false);
         Time.timeScale = 1; 
-
-        if (portalObject != null)
-        {
-            portalObject.SetActive(true); 
-        }
     }
 
     List<SkillData> GetRandomSkills(int count)
     {
-        List<SkillData> tempList = new List<SkillData>(allSkills);
+        List<SkillData> filteredPool = new List<SkillData>();
+        
+        // Filter based on Map Index
+        foreach(var s in allSkills)
+        {
+            if (currentMapIndex == 1 && s.upgradeType == SkillData.SkillType.SkillDamage) continue;
+            filteredPool.Add(s);
+        }
+
         List<SkillData> result = new List<SkillData>();
-
-        if (count > tempList.Count) count = tempList.Count;
-
         for (int i = 0; i < count; i++)
         {
-            if (tempList.Count == 0) break;
-            int randomIndex = Random.Range(0, tempList.Count);
-            result.Add(tempList[randomIndex]);
-            tempList.RemoveAt(randomIndex); 
+            if (filteredPool.Count == 0) break;
+            
+            // 80% Common, 20% Rare
+            SkillData.Rarity targetRarity = (Random.value < 0.2f) ? SkillData.Rarity.Rare : SkillData.Rarity.Common;
+            List<SkillData> rarityMatch = filteredPool.FindAll(s => s.skillRarity == targetRarity);
+            
+            SkillData selectedSkill = (rarityMatch.Count > 0) ? rarityMatch[Random.Range(0, rarityMatch.Count)] : filteredPool[0];
+
+            if (selectedSkill != null)
+            {
+                result.Add(selectedSkill);
+                filteredPool.Remove(selectedSkill); 
+            }
         }
         return result;
     }

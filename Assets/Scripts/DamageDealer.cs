@@ -8,6 +8,7 @@ public class DamageDealer : MonoBehaviour
 
     void Awake()
     {
+        // Finds the combat script you provided on the parent object
         combat = GetComponentInParent<PlayerCombat>();
     }
 
@@ -21,19 +22,16 @@ public class DamageDealer : MonoBehaviour
         enemiesHit.Clear();
     }
 
-// Inside DamageDealer.cs
-private void OnDrawGizmos()
-{
-    BoxCollider2D collider = GetComponent<BoxCollider2D>();
-    if (collider != null)
+    private void OnDrawGizmos()
     {
-        // This will now draw even if the GameObject is inactive in some Unity versions,
-        // but for it to be reliable, the script component itself must be enabled.
-        Gizmos.color = Color.red;
-        Gizmos.matrix = transform.localToWorldMatrix;
-        Gizmos.DrawWireCube(collider.offset, collider.size);
+        BoxCollider2D collider = GetComponent<BoxCollider2D>();
+        if (collider != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.matrix = transform.localToWorldMatrix;
+            Gizmos.DrawWireCube(collider.offset, collider.size);
+        }
     }
-}
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
@@ -42,10 +40,20 @@ private void OnDrawGizmos()
             if (!enemiesHit.Contains(collision.gameObject))
             {
                 Enemy_Health enemy = collision.GetComponent<Enemy_Health>();
-                if (enemy != null)
+                if (enemy != null && combat != null)
                 {
-                    int dmg = combat.GetCurrentDamage();
-                    enemy.TakeDamage(dmg, DamageType.NormalAttack);
+                    // 1. GET DAMAGE & CRIT FLAG: Call the method with the 'out' parameter
+                    // This triggers the "CRIT!" log in your Combat script
+                    int dmg = combat.GetCurrentDamage(out bool isCrit);
+
+                    // 2. APPLY DAMAGE: Pass the calculated dmg and the exact isCrit flag
+                    // This ensures the enemy shows yellow text correctly
+                    enemy.TakeDamage(dmg, DamageType.NormalAttack, isCrit);
+
+                    // 3. TRIGGER LIFESTEAL: Uses the playerCombat logic
+                    // If lifestealChance is 1.0f, this will heal the player every hit
+                    combat.ApplyLifesteal(dmg);
+
                     enemiesHit.Add(collision.gameObject);
                 }
             }

@@ -9,6 +9,15 @@ public class UpgradeCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExi
     private Vector3 originalScale = Vector3.one;
     private Vector3 targetScale = Vector3.one;
 
+    // Added the missing variable to store the skill reference
+    private SkillData thisSkillData;
+
+    // Added a method to receive the data from your SkillCardUI script
+    public void SetData(SkillData data)
+    {
+        thisSkillData = data;
+    }
+
     private void Update()
     {
         // Use unscaledDeltaTime because game is paused
@@ -27,7 +36,10 @@ public class UpgradeCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        // Tell the manager this card was selected
-        UpgradeManager.Instance.SelectUpgrade(this.transform);
+        // FIXED: Now passes both SkillData and the Transform to satisfy the UpgradeManager
+        if (thisSkillData != null && UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.SelectUpgrade(thisSkillData, this.transform);
+        }
     }
 }

@@ -4,51 +4,47 @@ using TMPro;
 
 public class SkillCardUI : MonoBehaviour
 {
-    [Header("UI References")]
-    public TextMeshProUGUI titleText;
-    public TextMeshProUGUI descText;
-    public Button cardButton;
+    [Header("UI Elements")]
+    [SerializeField] private TextMeshProUGUI titleText;
+    [SerializeField] private TextMeshProUGUI descriptionText;
+    [SerializeField] private TextMeshProUGUI rarityText;
+    [SerializeField] private Image cardFrame; // The background image
 
-    private SkillData _data;
+    [Header("Rarity Sprites")]
+    [SerializeField] private Sprite commonCardSprite; 
+    [SerializeField] private Sprite rareCardSprite;   
 
-    public void Setup(SkillData data)
+    private SkillData thisSkillData;
+
+    // Called by UpgradeManager when the card is spawned
+    public void Setup(SkillData skill)
     {
-        _data = data;
-        
-        titleText.text = data.skillName;
-        descText.text = data.description;
+        thisSkillData = skill;
 
-        // Reset the button to ensure it's clean
-        cardButton.onClick.RemoveAllListeners();
-        cardButton.onClick.AddListener(OnCardSelected);
+        // Populate Text Fields
+        if (titleText != null) titleText.text = skill.skillName;
+        if (descriptionText != null) descriptionText.text = skill.description;
+        if (rarityText != null) rarityText.text = skill.skillRarity.ToString();
+
+        // SWAP SPRITE: Changes the background sprite based on rarity
+        if (cardFrame != null)
+        {
+            cardFrame.sprite = (skill.skillRarity == SkillData.Rarity.Rare) ? rareCardSprite : commonCardSprite;
+        }
+
+        // Link the data to your hover script for effects
+        if (TryGetComponent(out UpgradeCardHover hover))
+        {
+            hover.SetData(skill);
+        }
     }
 
-    private void OnCardSelected()
+    public void OnClickSelect()
     {
-        Debug.Log("1. Card Button physically clicked!");
-
-        if (_data == null) 
+        // Triggers the upgrade in the Manager
+        if (UpgradeManager.Instance != null && thisSkillData != null)
         {
-            Debug.LogError("Data is null on this card!");
-            return;
-        }
-
-        // Apply stats
-        if (PlayerStats.Instance != null)
-        {
-            PlayerStats.Instance.ApplyUpgrade(_data.upgradeType, _data.valueAmount);
-            Debug.Log("2. PlayerStats applied.");
-        }
-
-        // Trigger the Manager
-        if (UpgradeManager.Instance != null)
-        {
-            Debug.Log("3. Calling UpgradeManager.SelectUpgrade...");
-            UpgradeManager.Instance.SelectUpgrade(this.transform);
-        }
-        else
-        {
-            Debug.LogError("UpgradeManager.Instance is MISSING!");
+            UpgradeManager.Instance.SelectUpgrade(thisSkillData, this.transform);
         }
     }
 }

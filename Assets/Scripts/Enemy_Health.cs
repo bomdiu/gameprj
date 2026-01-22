@@ -20,11 +20,8 @@ public class Enemy_Health : MonoBehaviour
     [SerializeField] private float knockbackStunTime = 0.15f;
 
     [Header("Morph (Squash & Stretch)")]
-    [Tooltip("Tỷ lệ bẹt (X rộng ra, Y lùn đi)")]
     [SerializeField] private Vector3 squashScale = new Vector3(1.3f, 0.7f, 1f);
-    [Tooltip("Thời gian giữ trạng thái bẹt (giây)")]
     [SerializeField] private float squashHoldDuration = 0.05f; 
-    [Tooltip("Tốc độ nảy lại hình dạng ban đầu")]
     [SerializeField] private float morphRestoreSpeed = 8f;
 
     [Header("Death Juice")]
@@ -81,7 +78,8 @@ public class Enemy_Health : MonoBehaviour
         }
     }
 
-    public void TakeDamage(int amount, DamageType damageType)
+    // UPDATED: Now supports isCrit for visual feedback
+    public void TakeDamage(int amount, DamageType damageType, bool isCrit = false)
     {
         if (isDead) return;
 
@@ -89,7 +87,9 @@ public class Enemy_Health : MonoBehaviour
         if (damageToApply <= 0) return;
 
         ApplyDamageLogic(damageToApply);
-        ShowDamagePopup(damageToApply);
+        
+        // Pass the isCrit flag to the popup
+        ShowDamagePopup(damageToApply, isCrit);
 
         if (currentHealth <= 0)
         {
@@ -110,21 +110,17 @@ public class Enemy_Health : MonoBehaviour
         if (isDead) return;
         isDead = true;
 
-        // 1. UPDATE SORTING LAYER IMMEDIATELY
         if (sr != null && !string.IsNullOrEmpty(deathSortingLayer))
         {
             sr.sortingLayerName = deathSortingLayer;
         }
 
-        // 2. CONFIGURE COLLISION FOR DEATH
-        // We keep the collider active to hit Obstacles but ignore Player/Enemies
         int playerLayer = LayerMask.NameToLayer("Player");
         int enemyLayer = LayerMask.NameToLayer("Enemy"); 
         
         if (playerLayer != -1) Physics2D.IgnoreLayerCollision(gameObject.layer, playerLayer, true);
         if (enemyLayer != -1) Physics2D.IgnoreLayerCollision(gameObject.layer, enemyLayer, true);
 
-        // Shutdown Brain/AI
         MonoBehaviour[] scripts = GetComponents<MonoBehaviour>();
         foreach (MonoBehaviour s in scripts)
         {
@@ -136,7 +132,6 @@ public class Enemy_Health : MonoBehaviour
 
     private IEnumerator DeathSequenceRoutine()
     {
-        // 3. INITIAL EXPLOSIVE VELOCITY
         GameObject player = GameObject.FindWithTag("Player");
         if (player != null && rb != null)
         {
@@ -147,12 +142,10 @@ public class Enemy_Health : MonoBehaviour
 
         if (damageFlash != null) damageFlash.FlashIndefinitely();
 
-        // 4. DECREASE VELOCITY OVER TIME
         float elapsed = 0f;
         while (elapsed < deathKnockbackDuration)
         {
             elapsed += Time.deltaTime;
-            // Velocity is lerped, but rb.simulated remains true so it hits walls
             if (rb != null)
             {
                 rb.velocity = Vector2.Lerp(rb.velocity, Vector2.zero, Time.deltaTime * (1f / deathKnockbackDuration));
@@ -160,8 +153,6 @@ public class Enemy_Health : MonoBehaviour
             yield return null;
         }
 
-        // 5. STOP MOVEMENT
-        // Simulation stays on so the enemy doesn't clip through obstacles if it hit one
         if (rb != null)
         {
             rb.velocity = Vector2.zero;
@@ -170,7 +161,6 @@ public class Enemy_Health : MonoBehaviour
         if (morphCoroutine != null) StopCoroutine(morphCoroutine);
         transform.localScale = Vector3.Scale(originalScale, deathSquashScale);
 
-        // 6. LINGER & DESTROY
         yield return new WaitForSeconds(deathDestroyDelay);
 
         if (deathParticlePrefab != null) Instantiate(deathParticlePrefab, transform.position, Quaternion.identity);
@@ -178,7 +168,6 @@ public class Enemy_Health : MonoBehaviour
 
         if (WaveManager.Instance != null) WaveManager.Instance.OnEnemyKilled();
         
-        // Reset layer collisions before destruction to maintain global physics integrity
         int playerLayer = LayerMask.NameToLayer("Player");
         int enemyLayer = LayerMask.NameToLayer("Enemy");
         if (playerLayer != -1) Physics2D.IgnoreLayerCollision(gameObject.layer, playerLayer, false);
@@ -215,7 +204,7 @@ public class Enemy_Health : MonoBehaviour
         {
             int damage = Mathf.Abs(amount);
             ApplyDamageLogic(damage);
-            ShowDamagePopup(damage);
+            ShowDamagePopup(damage, false); // ChangeHealth defaults to non-crit visuals
             if (damageFlash != null) damageFlash.Flash();
             if (HitStopManager.Instance != null) HitStopManager.Instance.HitStop(hitstopDuration);
             ApplyMorphEffect(); 
@@ -255,7 +244,8 @@ public class Enemy_Health : MonoBehaviour
     public bool IsKnockedBack() => knockbackTimer > 0;
     private void ApplyDamageLogic(int amount) { currentHealth = Mathf.Max(currentHealth - amount, 0); }
 
-    void ShowDamagePopup(int amount)
+    // UPDATED: Visual logic for Critical Hits
+    void ShowDamagePopup(int amount, bool isCrit)
     {
         if (damageTextPrefab != null)
         {
@@ -263,7 +253,18 @@ public class Enemy_Health : MonoBehaviour
             spawnPos.z = -1f; 
             GameObject textInstance = Instantiate(damageTextPrefab, spawnPos, Quaternion.identity);
             DamagePopup popupScript = textInstance.GetComponent<DamagePopup>();
-            if (popupScript != null) popupScript.Setup(amount, Color.yellow); 
+            
+            if (popupScript != null) 
+            {
+                // CRIT VISUALS: Yellow color and larger scale
+                Color popupColor = isCrit ? Color.yellow : Color.white;
+                popupScript.Setup(amount, popupColor); 
+
+                if (isCrit)
+                {
+                    textInstance.transform.localScale *= 1.4f; // Make it pop more!
+                }
+            } 
         }
     }
 

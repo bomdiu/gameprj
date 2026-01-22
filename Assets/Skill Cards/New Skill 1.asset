@@ -10,9 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c1149334329f9e488fe4a4df8ff50b0, type: 3}
-  m_Name: Health Buff
+  m_Name: New Skill 1
   m_EditorClassIdentifier: 
-  skillName: Health Buff
-  description: Max HP +
-  upgradeType: 2
-  valueAmount: 20
+  skillName: sped
+  description: tang sped
+  icon: {fileID: 0}
+  skillRarity: 0
+  upgradeType: 3
+  valueAmount: 1
+  secondValue: 0

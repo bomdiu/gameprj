@@ -52,22 +52,23 @@ Shader "Custom/SpriteFlash" {
                 return o;
             }
 
-            half4 frag (Varyings i) : SV_Target {
-                // 1. Get the base sprite color
-                half4 texColor = tex2D(_MainTex, i.uv) * i.color;
-                
-                // 2. Apply Flash logic
-                texColor.rgb = lerp(texColor.rgb, _FlashColor.rgb, _FlashAmount);
-                
-                // 3. Sample the 2D Light Texture
-                float2 lightUV = i.screenPos.xy / i.screenPos.w;
-                half4 lightColor = tex2D(_ShapeLightTexture0, lightUV);
-                
-                // 4. Multiply the sprite by the light
-                texColor.rgb *= lightColor.rgb;
-                
-                return texColor;
-            }
+          half4 frag (Varyings i) : SV_Target {
+    // 1. Get the base sprite color
+    half4 texColor = tex2D(_MainTex, i.uv) * i.color;
+    
+    // 2. Sample the 2D Light Texture
+    float2 lightUV = i.screenPos.xy / i.screenPos.w;
+    half4 lightColor = tex2D(_ShapeLightTexture0, lightUV);
+    
+    // 3. APPLY LIGHT TO THE SPRITE
+    half3 litRGB = texColor.rgb * lightColor.rgb;
+    
+    // 4. LERP TO FLASH COLOR AFTER LIGHTING
+    // This makes the flash bright even in dark areas
+    half3 finalRGB = lerp(litRGB, _FlashColor.rgb, _FlashAmount);
+    
+    return half4(finalRGB, texColor.a);
+}
             ENDHLSL
         }
     }

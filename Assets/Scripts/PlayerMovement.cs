@@ -4,15 +4,16 @@ public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
+    [Tooltip("Multiplier for speed upgrades (e.g., 1.1 = +10%)")]
+    public float speedMultiplier = 1f; // NEW: For percentage-based speed upgrades
+    
     public float dashDistance = 5f;
     public float dashDuration = 0.2f;
-    public float dashCooldown = 1f;
+    public float dashCooldown = 1f; // Common: Can be reduced by upgrades
 
-    // --- NEW VARIABLE HERE ---
     [Header("Combat Interactions")]
     [Tooltip("How long (in seconds) the player cannot move or turn after an attack.")]
-    public float directionLockTime = 0.25f; // Adjust this in Inspector to change lock duration
-    // -------------------------
+    public float directionLockTime = 0.25f; 
 
     [Header("Dash VFX Settings")]
     public GameObject dashEffectPrefab;
@@ -40,7 +41,6 @@ public class PlayerMovement : MonoBehaviour
     private Vector2 dashDir;
     private float ghostTimer;
     
-    // Hidden variable to control movement state from other scripts
     [HideInInspector] public bool canMove = true;
 
     void Start()
@@ -71,6 +71,7 @@ public class PlayerMovement : MonoBehaviour
             UpdateBackwardAnimation();
         }
 
+        // Uses the current dashCooldown value, which may be lowered by upgrades
         if (Input.GetKeyDown(KeyCode.Space) && Time.time >= lastDash + dashCooldown && moveInput.sqrMagnitude > 0)
         {
             StartDash();
@@ -79,9 +80,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void FaceCursor()
     {
-        // Stop flipping if movement is disabled (Attacking)
         if (!canMove) return;
-
         if (visualsTransform == null) return;
         Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
         visualsTransform.localScale = new Vector3(mousePos.x > transform.position.x ? -1 : 1, 1, 1);
@@ -98,7 +97,8 @@ public class PlayerMovement : MonoBehaviour
     void FixedUpdate()
     {
         if (isDashing) ApplyDashMovement();
-        else if (canMove) rb.velocity = moveInput * moveSpeed;
+        // Multiplies base speed by the upgrade multiplier
+        else if (canMove) rb.velocity = moveInput * (moveSpeed * speedMultiplier);
     }
 
     private void StartDash()
@@ -139,21 +139,15 @@ public class PlayerMovement : MonoBehaviour
     private void ApplyDashMovement()
     {
         rb.velocity = dashDir * (dashDistance / dashDuration);
-
         ghostTimer -= Time.fixedDeltaTime;
         if (ghostTimer <= 0) { SpawnGhost(); ghostTimer = ghostDelay; }
-
         dashTimeLeft -= Time.fixedDeltaTime;
         if (dashTimeLeft <= 0)
         {
             isDashing = false;
             rb.velocity = Vector2.zero;
-
             int enemyLayer = LayerMask.NameToLayer("Enemy");
-            if (enemyLayer != -1)
-            {
-                Physics2D.IgnoreLayerCollision(gameObject.layer, enemyLayer, false);
-            }
+            if (enemyLayer != -1) Physics2D.IgnoreLayerCollision(gameObject.layer, enemyLayer, false);
         }
     }
 }

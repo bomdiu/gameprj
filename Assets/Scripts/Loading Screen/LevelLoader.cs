@@ -5,15 +5,21 @@ using UnityEngine.UI;
 
 public class LevelLoader : MonoBehaviour
 {
-    // Singleton: Giúp gọi script này từ bất cứ đâu (nút Start, cổng kết thúc màn...)
+    // Singleton: Allows you to call LevelLoader.instance.LoadLevel(index) from anywhere.
     public static LevelLoader instance;
 
-    [Header("Cài đặt")]
-    public GameObject loadingScreenPrefab; // Kéo cái Prefab LoadingCanvas vào đây
+    [Header("UI References")]
+    public GameObject loadingScreenPrefab;
+
+    [Header("Settings")]
+    [Tooltip("How fast the bar fills (0.5 = 2 seconds, 1 = 1 second)")]
+    public float loadSpeedMultiplier = 0.5f;
+    [Tooltip("How fast the screen fades to/from black")]
+    public float fadeDuration = 0.5f; 
 
     private void Awake()
     {
-        // Đảm bảo LevelLoader luôn tồn tại xuyên suốt các màn chơi
+        // Keep this object alive across all scenes
         if (instance == null)
         {
             instance = this;
@@ -25,62 +31,89 @@ public class LevelLoader : MonoBehaviour
         }
     }
 
-    // Hàm này sẽ được gọi từ nút Start
     public void LoadLevel(int sceneIndex)
     {
         StartCoroutine(LoadAsynchronously(sceneIndex));
     }
 
-    IEnumerator LoadAsynchronously(int sceneIndex)
+    private IEnumerator LoadAsynchronously(int sceneIndex)
     {
-        // 1. Sinh ra màn hình Loading
+        // 1. Create the Loading Screen
         GameObject loadingScreen = Instantiate(loadingScreenPrefab);
         DontDestroyOnLoad(loadingScreen);
 
-        // Lấy các thành phần UI
+        CanvasGroup canvasGroup = loadingScreen.GetComponent<CanvasGroup>();
         Slider slider = loadingScreen.GetComponentInChildren<Slider>();
         
-        // 2. Bắt đầu tải Scene ngầm
-        AsyncOperation operation = SceneManager.LoadSceneAsync(sceneIndex);
+        // Ensure it starts completely invisible so we don't 'pop' into view
+        if (canvasGroup != null) canvasGroup.alpha = 0f;
+        if (slider != null) slider.value = 0f;
 
-        // QUAN TRỌNG: Ngăn không cho Unity chuyển cảnh ngay khi load xong
-        // Nó sẽ dừng lại ở mức 90% (0.9) và chờ lệnh
+        // --- STEP 2: THE ANTI-FLICKER FADE IN ---
+        // We PAUSE here until the screen is 100% solid. 
+        // We do NOT start SceneManager until the game is hidden.
+        yield return StartCoroutine(Fade(canvasGroup, 0f, 1f));
+
+        // --- STEP 3: START LOADING (ONLY NOW) ---
+        AsyncOperation operation = SceneManager.LoadSceneAsync(sceneIndex);
+        
+        // Stops Unity from switching scenes the second it hits 90%
         operation.allowSceneActivation = false;
 
-        float fakeProgress = 0f;
+        float visualProgress = 0f;
 
-        // 3. Vòng lặp xử lý (Chạy cho đến khi tải xong VÀ chạy hết thời gian giả lập)
-        // Ở đây mình ép nó chạy ít nhất 3 giây (fakeProgress < 1) thì mới cho qua
-        while (!operation.isDone)
+        // 4. THE LOADING LOOP
+        while (visualProgress < 1f || operation.progress < 0.9f)
         {
-            // --- PHẦN LÀM GIẢ TIẾN TRÌNH (FAKE LOADING) ---
-            // Tăng fakeProgress từ từ theo thời gian thực (3 giây để đầy cây)
-            fakeProgress += Time.deltaTime * 0.33f; // 0.33 nghĩa là mất khoảng 3s để lên được 1
-
-            // Lấy giá trị thực của việc load scene (max là 0.9)
-            float realProgress = Mathf.Clamp01(operation.progress / 0.9f);
-
-            // Giá trị hiển thị trên Slider sẽ là số NHỎ HƠN giữa Fake và Real
-            // Điều này đảm bảo thanh slider chạy mượt từ 0->1 chứ không nhảy cóc
-            float displayProgress = Mathf.Min(fakeProgress, realProgress);
+            // Move the bar visually based on time
+            visualProgress = Mathf.MoveTowards(visualProgress, 1f, Time.deltaTime * loadSpeedMultiplier);
+            
+            // Unity progress caps at 0.9 until activation
+            float actualUnityProgress = Mathf.Clamp01(operation.progress / 0.9f);
 
             if (slider != null)
             {
-                slider.value = displayProgress;
+                // Slider value is whichever is lower (visual vs reality)
+                slider.value = Mathf.Min(visualProgress, actualUnityProgress);
             }
 
-            // --- ĐIỀU KIỆN KẾT THÚC ---
-            // Nếu tải thật đã xong (progress >= 0.9) VÀ thanh slider giả đã chạy đầy
-            if (operation.progress >= 0.9f && fakeProgress >= 1f)
+            // Only switch when visual bar is 100% AND Unity is ready
+            if (visualProgress >= 1f && operation.progress >= 0.9f)
             {
-                // Cho phép chuyển cảnh
                 operation.allowSceneActivation = true;
             }
 
             yield return null;
         }
 
-        // 4. Dọn dẹp
+        // Wait until Unity confirms the scene has fully swapped
+        while (!operation.isDone)
+        {
+            yield return null;
+        }
+
+        // --- THE SETTLING BUFFER ---
+        // Give 2D Lighting and Shadow Casters a moment to stabilize hidden behind black
+        yield return new WaitForSeconds(0.4f);
+
+        // 5. FADE OUT
+        yield return StartCoroutine(Fade(canvasGroup, 1f, 0f));
+        
+        // Cleanup
         Destroy(loadingScreen);
+    }
+
+    private IEnumerator Fade(CanvasGroup cg, float start, float end)
+    {
+        if (cg == null) yield break;
+
+        float timer = 0;
+        while (timer < fadeDuration)
+        {
+            timer += Time.deltaTime;
+            cg.alpha = Mathf.Lerp(start, end, timer / fadeDuration);
+            yield return null;
+        }
+        cg.alpha = end;
     }
 }

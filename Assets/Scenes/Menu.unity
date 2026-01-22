@@ -1085,6 +1085,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   loadingScreenPrefab: {fileID: 3819308801833430552, guid: 0a55d605e8d529e449cd508c19e7907b, type: 3}
+  loadSpeedMultiplier: 0.36
+  fadeDuration: 0.5
 --- !u!1 &878636044
 GameObject:
   m_ObjectHideFlags: 0

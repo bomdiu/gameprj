@@ -10,9 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c1149334329f9e488fe4a4df8ff50b0, type: 3}
-  m_Name: Speed Boots
+  m_Name: Maximum Health
   m_EditorClassIdentifier: 
-  skillName: Speed Boots
-  description: Speed Move +
-  upgradeType: 1
-  valueAmount: 1
+  skillName: mau
+  description: tang mau
+  icon: {fileID: 0}
+  skillRarity: 0
+  upgradeType: 0
+  valueAmount: 10
+  secondValue: 0
