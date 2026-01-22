@@ -1,45 +1,71 @@
 using UnityEngine;
+using UnityEngine.UI; // Thêm thư viện UI để xử lý Image
 using UnityEngine.SceneManagement;
 
 public class PauseMenu : MonoBehaviour
 {
     public static bool GameIsPaused = false;
-    public GameObject pausePanel;    // Kéo PausePanel vào đây
-    public GameObject settingPanel;  // Kéo SettingPanel vào đây
+    public GameObject pausePanel;
+    public GameObject settingPanel;
 
-    void Update()
+    // Thêm biến để xử lý shader (như hướng dẫn trước)
+    public Image backgroundPauseImage; 
+    private Material spotlightMat;
+
+    void Start()
     {
-        // Nhấn Esc để mở/đóng menu (Giữ nguyên)
-        if (Input.GetKeyDown(KeyCode.Escape))
+        // Tạo bản sao Material để không bị lỗi đổi màu gốc
+        if (backgroundPauseImage != null)
         {
-            if (GameIsPaused)
-            {
-                ResumeGame();
-            }
-            else
-            {
-                PauseGame();
-            }
+            spotlightMat = new Material(backgroundPauseImage.material);
+            backgroundPauseImage.material = spotlightMat;
         }
     }
 
-    // 1. Chức năng Resume (Chơi tiếp) - (Giữ nguyên)
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (GameIsPaused) ResumeGame();
+            else PauseGame();
+        }
+    }
+
     public void ResumeGame()
     {
         pausePanel.SetActive(false);
-        settingPanel.SetActive(false); // Đảm bảo bảng setting cũng đóng
-        Time.timeScale = 1f;          // Game chạy lại bình thường
+        settingPanel.SetActive(false);
+        Time.timeScale = 1f; // Chạy lại game
         GameIsPaused = false;
     }
 
     void PauseGame()
     {
-        pausePanel.SetActive(true);
-        Time.timeScale = 0f;          // Ngừng thời gian game
+        // 1. ĐÓNG BĂNG THỜI GIAN NGAY LẬP TỨC (Ưu tiên số 1)
+        Time.timeScale = 0f;
         GameIsPaused = true;
+
+        // 2. Hiện UI
+        pausePanel.SetActive(true);
+
+        // 3. Xử lý Shader (Đặt trong try-catch để nếu lỗi cũng không sao)
+        try 
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null && spotlightMat != null)
+            {
+                Vector3 screenPos = Camera.main.WorldToScreenPoint(player.transform.position);
+                float x = screenPos.x / Screen.width;
+                float y = screenPos.y / Screen.height;
+                spotlightMat.SetVector("_Center", new Vector4(x, y, 0, 0));
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("Không tìm thấy Player hoặc lỗi Shader: " + e.Message);
+        }
     }
 
-    // 2. Chức năng Settings (Chuyển bảng) - (Giữ nguyên)
     public void OpenSettings()
     {
         pausePanel.SetActive(false);
@@ -52,17 +78,14 @@ public class PauseMenu : MonoBehaviour
         settingPanel.SetActive(false);
     }
 
-    // 3. Chức năng Main Menu - (Giữ nguyên)
     public void LoadMainMenu()
     {
-        Time.timeScale = 1f;          // RESET thời gian về 1 trước khi đổi cảnh
-        SceneManager.LoadScene(0);    // Load Scene Main Menu (Index 0)
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(0);
     }
 
-    // 4. Chức năng Thoát Game (MỚI THÊM VÀO)
     public void QuitGame()
     {
-        Debug.Log("Quitting Game..."); // Dòng này để kiểm tra khi chạy trong Unity Editor
-        Application.Quit();            // Lệnh này chỉ hoạt động khi đã Build game ra file .exe
+        Application.Quit();
     }
 }
