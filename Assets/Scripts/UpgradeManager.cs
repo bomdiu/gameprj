@@ -83,59 +83,86 @@ private void Update()
         StartCoroutine(WaveEndRoutine()); 
     }
 
-    private IEnumerator WaveEndRoutine()
+ private IEnumerator WaveEndRoutine()
+{
+    // Ensure game is running for the particle simulation
+    Time.timeScale = 1f; 
+
+    // Access Modules
+    var velocityModule = fireflySystem.velocityOverLifetime;
+    var emissionModule = fireflySystem.emission;
+    var colorModule = fireflySystem.colorOverLifetime; 
+    var mainModule = fireflySystem.main;
+    
+    // 1. PREPARE FOR SUCK: Turn off new spawns so we only focus on existing ones
+    emissionModule.enabled = false; 
+    velocityModule.enabled = true; 
+    velocityModule.space = ParticleSystemSimulationSpace.World; 
+    colorModule.enabled = true; 
+
+    float elapsed = 0f; 
+    while (elapsed < transitionDelay) 
     {
-        Time.timeScale = 1f; 
-        var velocityModule = fireflySystem.velocityOverLifetime;
-        var emissionModule = fireflySystem.emission;
-        var colorModule = fireflySystem.colorOverLifetime; 
+        float normalizedTime = elapsed / transitionDelay;
         
-        velocityModule.enabled = true; 
-        velocityModule.space = ParticleSystemSimulationSpace.World; 
-        emissionModule.enabled = false; 
-        colorModule.enabled = true; 
-
-        float elapsed = 0f; 
-        while (elapsed < transitionDelay) 
+        if (playerTransform != null)
         {
-            float normalizedTime = elapsed / transitionDelay;
-            if (playerTransform != null)
+            // Keep the system centered on the player during the suck
+            fireflySystem.transform.position = playerTransform.position;
+            
+            // INCREASE PULL OVER TIME: Starts at 0, ramps up to vortex strength
+            velocityModule.radial = Mathf.Lerp(0, vortexPullStrength, normalizedTime * 2f);
+
+            // Glow logic
+            if (playerGlowLight != null)
             {
-                fireflySystem.transform.position = playerTransform.position;
-                velocityModule.radial = vortexPullStrength;
-
-                if (playerGlowLight != null)
-                {
-                    playerGlowLight.intensity = normalizedTime * maxGlowIntensity;
-                    playerGlowLight.pointLightOuterRadius = normalizedTime * maxOuterRadius;
-                }
-
-                if (normalizedTime >= fadeStartPercentage)
-                {
-                    float fadeAlpha = Mathf.Lerp(1f, 0f, (normalizedTime - fadeStartPercentage) / (1f - fadeStartPercentage));
-                    Gradient grad = new Gradient();
-                    grad.SetKeys(
-                        new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
-                        new GradientAlphaKey[] { new GradientAlphaKey(fadeAlpha, 0f), new GradientAlphaKey(fadeAlpha, 1f) }
-                    );
-                    colorModule.color = grad;
-                }
+                playerGlowLight.intensity = normalizedTime * maxGlowIntensity;
+                playerGlowLight.pointLightOuterRadius = normalizedTime * maxOuterRadius;
             }
-            elapsed += Time.unscaledDeltaTime; 
-            yield return null; 
-        }
 
-        if (playerGlowLight != null)
-        {
-            playerGlowLight.intensity = maxGlowIntensity;
-            playerGlowLight.pointLightOuterRadius = maxOuterRadius;
+            // Fade logic
+            if (normalizedTime >= fadeStartPercentage)
+            {
+                float fadeAlpha = Mathf.Lerp(1f, 0f, (normalizedTime - fadeStartPercentage) / (1f - fadeStartPercentage));
+                Gradient grad = new Gradient();
+                grad.SetKeys(
+                    new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                    new GradientAlphaKey[] { new GradientAlphaKey(fadeAlpha, 0f), new GradientAlphaKey(fadeAlpha, 1f) }
+                );
+                colorModule.color = grad;
+            }
         }
-
-        velocityModule.radial = 0f; 
-        emissionModule.enabled = true;
-        ShowUpgradeOptions(); 
-        StartCoroutine(FadeOutGlowLight());
+        elapsed += Time.unscaledDeltaTime; 
+        yield return null; 
     }
+
+    // 3. RESET TO START-OF-GAME STATE
+    // Force the radial velocity back to exactly 0
+    velocityModule.radial = 0f; 
+    velocityModule.enabled = false;
+
+    // Restore full opacity (Alpha 1) so they aren't born transparent
+    Gradient resetGrad = new Gradient();
+    resetGrad.SetKeys(
+        new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+        new GradientAlphaKey[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) }
+    );
+    colorModule.color = resetGrad;
+    colorModule.enabled = false; 
+
+    // Re-enable spawning for the new wave
+    emissionModule.enabled = true; 
+
+
+    if (playerGlowLight != null)
+    {
+        playerGlowLight.intensity = maxGlowIntensity;
+        playerGlowLight.pointLightOuterRadius = maxOuterRadius;
+    }
+
+    ShowUpgradeOptions(); 
+    StartCoroutine(FadeOutGlowLight());
+}
 
     private IEnumerator FadeOutGlowLight()
     {
