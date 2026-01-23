@@ -20,9 +20,9 @@ public class UpgradeManager : MonoBehaviour
     [SerializeField] private Vector3 targetScale = Vector3.one; 
 
     [Header("Player References")]
-    [SerializeField] private PlayerMovement playerMovement;
-    [SerializeField] private PlayerHealth playerHealth;
-    [SerializeField] private PlayerCombat playerCombat;
+    [SerializeField] public PlayerMovement playerMovement;
+    [SerializeField] public PlayerHealth playerHealth;
+    [SerializeField] public PlayerCombat playerCombat;
     public int currentMapIndex = 1; 
 
     [Header("Visual Effects")]
@@ -43,7 +43,19 @@ public class UpgradeManager : MonoBehaviour
 
     [Header("Data")]
     public List<SkillData> allSkills; 
-
+private void Update()
+{
+    // --- DEBUG TRIGGER ---
+    // Press 'M' to open the upgrade panel for testing
+    if (Input.GetKeyDown(KeyCode.M))
+    {
+        if (upgradePanel != null && !upgradePanel.activeSelf)
+        {
+            Debug.Log("<color=cyan>Debug: Opening Upgrade Panel</color>");
+            ShowUpgradeOptions();
+        }
+    }
+}
     private void Awake()
     {
         // Improved Singleton Pattern
@@ -202,7 +214,6 @@ public class UpgradeManager : MonoBehaviour
             case SkillData.SkillType.SpeedUp:
                 playerMovement.speedMultiplier += skill.valueAmount; break;
             case SkillData.SkillType.LifeSteal:
-                playerCombat.lifestealPercent += skill.valueAmount;
                 playerCombat.lifestealChance += skill.secondValue; break;
             case SkillData.SkillType.SkillDamage:
                 playerCombat.skillDamageBonus += (int)skill.valueAmount; break;

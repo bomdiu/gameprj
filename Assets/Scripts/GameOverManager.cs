@@ -13,73 +13,106 @@ public class GameOverManager : MonoBehaviour
     [Header("Effects")]
     public ParticleSystem deathParticles;
 
+    [Header("Cinematic Settings")]
+    public string deathAnimationState = "Player_Death"; // Exact name of your death state in Animator
+    public float slowdownDuration = 1.2f;              // Time to slow from 1 to 0 speed
+    public float postDeathWaitTime = 1.0f;             // How long to stay on the dead body before fading
+
     [Header("Audio Settings")]
-    public AudioSource gameOverSource; // Kéo AudioSource của Canvas vào đây
-    public AudioClip gameOverMusic;    // Kéo file nhạc buồn vào đây
-    public float fadeDuration = 1.5f;  // Thời gian chuyển đổi âm thanh
+    public AudioSource gameOverSource; 
+    public AudioClip gameOverMusic;    
+    public float fadeDuration = 1.5f;  
 
     public static GameOverManager Instance;
+    public static bool IsGameOver = false;
 
     void Awake()
     {
         if (Instance == null) Instance = this;
-        gameOverCanvas.SetActive(false);
+        else { Destroy(gameObject); return; }
+
+        if (gameOverCanvas != null) gameOverCanvas.SetActive(false);
+        IsGameOver = false;
     }
 
     public void TriggerDeath(Transform playerTransform)
     {
+        if (IsGameOver) return;
         StartCoroutine(DeathSequence(playerTransform));
     }
 
     IEnumerator DeathSequence(Transform player)
     {
-        // 1. Setup ban đầu
+        IsGameOver = true;
+
+        // --- PHASE 1: SLOW MOTION ---
+        // Gradually decrease game speed to zero
+        float slowTimer = 0;
+        float initialTimeScale = Time.timeScale;
+        while (slowTimer < slowdownDuration)
+        {
+            slowTimer += Time.unscaledDeltaTime;
+            Time.timeScale = Mathf.Lerp(initialTimeScale, 0f, slowTimer / slowdownDuration);
+            yield return null;
+        }
+        Time.timeScale = 0f; // Game is now fully frozen
+
+        // --- PHASE 2: PLAYER DEATH ANIMATION ---
+        // We play the animation while time is 0, so the Animator MUST use UnscaledTime
+        Animator anim = player.GetComponentInChildren<Animator>();
+        if (anim != null)
+        {
+            anim.updateMode = AnimatorUpdateMode.UnscaledTime; // Force it to ignore Time.timeScale
+            anim.Play(deathAnimationState);
+        }
+
+        // --- PHASE 3: PARTICLES & WAIT ---
+        // Trigger the death particles
+        if (deathParticles != null)
+        {
+            deathParticles.transform.position = player.position;
+            // Ensure particles ignore the paused clock
+            var main = deathParticles.main;
+            main.useUnscaledTime = true; 
+            deathParticles.Play();
+        }
+
+        // Wait for the animation and particles to finish (using Realtime/Unscaled)
+        yield return new WaitForSecondsRealtime(postDeathWaitTime);
+
+        // --- PHASE 4: UI FADE IN ---
         gameOverCanvas.SetActive(true);
         blackScreen.color = new Color(0, 0, 0, 0);
         contentGroup.alpha = 0;
 
-        // 2. XỬ LÝ ÂM THANH (Mới) -------------
-        // Tìm nhạc nền game đang phát (thường gắn ở Camera chính) và tắt dần
+        // Start BGM Fade and Play Music
         AudioSource currentBGM = Camera.main.GetComponent<AudioSource>();
         StartCoroutine(FadeOutBGM(currentBGM));
-
-        // Bật nhạc Game Over
         if (gameOverSource != null && gameOverMusic != null)
         {
             gameOverSource.clip = gameOverMusic;
             gameOverSource.Play();
-            // Optional: Nếu muốn fade in nhạc game over thì viết thêm coroutine, 
-            // nhưng thường nhạc game over nên vang lên ngay để tạo cảm xúc.
         }
-        // -------------------------------------
 
-        // 3. FREEZE GAME
-        Time.timeScale = 0f;
+        // Hard freeze all world objects (Exactly like Upgrade Manager)
+        FreezeWorldState();
 
-        // 4. Hiệu ứng tan biến
-        deathParticles.transform.position = player.position;
-        deathParticles.Play();
-
-        SpriteRenderer playerSprite = player.GetComponent<SpriteRenderer>();
-        if (playerSprite != null) playerSprite.enabled = false;
-
-        // 5. Màn hình tối dần
-        float timer = 0;
-        while (timer < fadeDuration)
+        // Fade in the black screen
+        float fadeTimer = 0;
+        while (fadeTimer < fadeDuration)
         {
-            timer += Time.unscaledDeltaTime;
-            float alpha = Mathf.Lerp(0, 1, timer / fadeDuration);
+            fadeTimer += Time.unscaledDeltaTime;
+            float alpha = Mathf.Lerp(0, 1, fadeTimer / fadeDuration);
             blackScreen.color = new Color(0, 0, 0, alpha);
             yield return null;
         }
 
-        // 6. Hiện Pop-up
-        timer = 0;
-        float popupDuration = 1.0f;
-        while (timer < popupDuration)
+        // Show buttons
+        float popupTimer = 0;
+        while (popupTimer < 0.5f)
         {
-            timer += Time.unscaledDeltaTime;
-            contentGroup.alpha = Mathf.Lerp(0, 1, timer / popupDuration);
+            popupTimer += Time.unscaledDeltaTime;
+            contentGroup.alpha = Mathf.Lerp(0, 1, popupTimer / 0.5f);
             yield return null;
         }
 
@@ -87,35 +120,50 @@ public class GameOverManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
     }
 
-    // Hàm phụ để tắt dần nhạc nền cũ cho êm tai
+    private void FreezeWorldState()
+    {
+        // Freeze Physics
+        Rigidbody2D[] allRbs = Object.FindObjectsByType<Rigidbody2D>(FindObjectsSortMode.None);
+        foreach (Rigidbody2D rb in allRbs) { rb.simulated = false; }
+
+        // Freeze world particles (except death effect)
+        ParticleSystem[] allParticles = Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None);
+        foreach (ParticleSystem ps in allParticles)
+        {
+            if (ps != deathParticles) ps.Pause(true);
+        }
+
+        // Freeze all other animators (enemies, etc.)
+        Animator[] allAnims = Object.FindObjectsByType<Animator>(FindObjectsSortMode.None);
+        foreach (Animator a in allAnims) { a.speed = 0f; }
+    }
+
     IEnumerator FadeOutBGM(AudioSource bgm)
     {
         if (bgm == null) yield break;
-
         float startVolume = bgm.volume;
         float timer = 0;
-
         while (timer < fadeDuration)
         {
             timer += Time.unscaledDeltaTime;
-            // Giảm volume từ mức hiện tại về 0
             bgm.volume = Mathf.Lerp(startVolume, 0, timer / fadeDuration);
             yield return null;
         }
-
         bgm.Stop();
-        bgm.volume = startVolume; // Trả lại volume cũ để lần sau chơi lại ko bị mất tiếng
+        bgm.volume = startVolume;
     }
 
     public void RetryGame()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); // Load lại màn hiện tại
+        IsGameOver = false;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void BackToMenu()
     {
         Time.timeScale = 1f;
+        IsGameOver = false;
         SceneManager.LoadScene(0);
     }
 }

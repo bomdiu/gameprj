@@ -1,5 +1,5 @@
 using UnityEngine;
-using System.Collections; // Required for Coroutines
+using System.Collections;
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -9,8 +9,10 @@ public class PlayerHealth : MonoBehaviour
     private bool isDead = false;
 
     [Header("Rare Upgrades")]
-    [Tooltip("Amount of HP restored every second.")]
-    public int healthRegen = 0; // Rare: Health Regen (int/s)
+    public int healthRegen = 0; 
+
+    [Header("Visual Effects")]
+    [SerializeField] private GameObject healParticlePrefab; 
 
     void Start()
     {
@@ -20,8 +22,6 @@ public class PlayerHealth : MonoBehaviour
             healthBarUI.SetMaxHealth(maxHealth);
             healthBarUI.SetHealth(currentHealth);
         }
-
-        // Start the regeneration loop immediately
         StartCoroutine(RegenRoutine()); 
     }
 
@@ -29,30 +29,31 @@ public class PlayerHealth : MonoBehaviour
     {
         while (!isDead)
         {
-            // Wait for 1 second
-            yield return new WaitForSeconds(1f);
-
-            // Only heal if the player is alive, has regen, and is below max health
+            yield return new WaitForSeconds(3f);
             if (healthRegen > 0 && currentHealth < maxHealth)
             {
-                // Heals the player and ensures it doesn't exceed max
-                currentHealth = Mathf.Min(currentHealth + healthRegen, maxHealth);
-                
-                // Update UI after regen
-                if (healthBarUI != null) healthBarUI.SetHealth(currentHealth);
+                Heal(healthRegen);
             }
         }
     }
 
-    // New method for the UpgradeManager to call
+    public void Heal(int amount)
+    {
+        if (isDead) return;
+        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+        if (healthBarUI != null) healthBarUI.SetHealth(currentHealth);
+
+        if (healParticlePrefab != null)
+        {
+            GameObject effect = Instantiate(healParticlePrefab, transform.position, Quaternion.identity, transform);
+            Destroy(effect, 1.5f);
+        }
+    }
+
     public void IncreaseMaxHealth(int amount)
     {
         maxHealth += amount;
-        
-        // Standard RPG rule: heal by the same amount max HP increased
         currentHealth += amount;
-
-        // Update UI to reflect new maximum
         if (healthBarUI != null)
         {
             healthBarUI.SetMaxHealth(maxHealth);
@@ -66,23 +67,45 @@ public class PlayerHealth : MonoBehaviour
 
         currentHealth += amount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        if (healthBarUI != null) healthBarUI.SetHealth(currentHealth); 
 
-        if (healthBarUI != null)
-        {
-            healthBarUI.SetHealth(currentHealth); 
-        }
-
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+        if (currentHealth <= 0) Die();
     }
 
     void Die()
     {
         if (isDead) return;
         isDead = true;
-        Debug.Log("Player has died!");
-        gameObject.SetActive(false);
+        
+        // 1. SEND SIGNAL IMMEDIATELY
+        // This must happen BEFORE hiding visuals or disabling scripts.
+        if (GameOverManager.Instance != null)
+        {
+            GameOverManager.Instance.TriggerDeath(transform);
+        }
+        else
+        {
+            // If you see this, the GameOverManager is NOT in your Hierarchy!
+            Debug.LogError("CRITICAL: GameOverManager Instance is null in Die()");
+        }
+
+        // 2. DISABLE MOVEMENT
+        PlayerMovement movement = GetComponent<PlayerMovement>();
+        if (movement != null)
+        {
+            movement.canMove = false; 
+            Rigidbody2D rb = GetComponent<Rigidbody2D>();
+            if (rb != null) 
+            {
+                rb.velocity = Vector2.zero;
+                rb.simulated = false; // Freeze physics instantly
+            }
+        }
+
+        // 4. DISABLE COLLISION
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
+        Debug.Log("Player Death Sequence complete.");
     }
 }

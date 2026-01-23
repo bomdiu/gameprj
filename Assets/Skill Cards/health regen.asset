@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c1149334329f9e488fe4a4df8ff50b0, type: 3}
-  m_Name: New Skill
+  m_Name: health regen
   m_EditorClassIdentifier: 
-  skillName: damage
-  description: tang dam
+  skillName: Regeneration
+  description: Automatically restores a small amount of health every three seconds
   icon: {fileID: 0}
   skillRarity: 1
-  upgradeType: 1
-  valueAmount: 10
+  upgradeType: 6
+  valueAmount: 1
   secondValue: 0
