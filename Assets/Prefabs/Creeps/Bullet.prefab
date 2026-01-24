@@ -163,9 +163,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 3.65
   lifeTime: 3
-  damageAmount: 10
+  damageAmount: 5
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 1024
   sortingLayerName: Default
-  sortingOrder: 5
+  sortingOrder: 0

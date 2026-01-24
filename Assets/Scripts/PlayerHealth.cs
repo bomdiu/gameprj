@@ -37,7 +37,7 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    public void Heal(int amount)
+  public void Heal(int amount)
     {
         if (isDead) return;
         currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
@@ -45,9 +45,31 @@ public class PlayerHealth : MonoBehaviour
 
         if (healParticlePrefab != null)
         {
+            // 1. Instantiate as usual
             GameObject effect = Instantiate(healParticlePrefab, transform.position, Quaternion.identity, transform);
-            Destroy(effect, 1.5f);
+            
+            // 2. Start a small Coroutine to handle the "Fade and Cleanup"
+            StartCoroutine(FadeAndDestroyParticles(effect, 1.5f));
         }
+    }
+
+    private IEnumerator FadeAndDestroyParticles(GameObject effect, float duration)
+    {
+        yield return new WaitForSeconds(duration);
+
+        ParticleSystem ps = effect.GetComponent<ParticleSystem>();
+        if (ps != null)
+        {
+            // 3. Stop emitting new particles
+            ps.Stop();
+            
+            // 4. Wait for the existing particles to live out their remaining time (fade)
+            // We wait for the 'startLifetime' so they can finish their Color Over Lifetime fade
+            yield return new WaitForSeconds(ps.main.startLifetime.constantMax);
+        }
+
+        // 5. Finally, destroy the object
+        Destroy(effect);
     }
 
     public void IncreaseMaxHealth(int amount)

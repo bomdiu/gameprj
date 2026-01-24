@@ -9,8 +9,8 @@ public class EnemyProjectile : MonoBehaviour
     [SerializeField] private LayerMask obstacleLayer;
 
     [Header("Visual Settings")]
-    [SerializeField] private string sortingLayerName = "Projectiles";
-    [SerializeField] private int sortingOrder = 5;
+    [SerializeField] private string sortingLayerName = "Default";
+    [SerializeField] private int sortingOrder = 0;
 
     private Vector2 moveDirection;
     private Rigidbody2D rb;
@@ -41,28 +41,27 @@ public class EnemyProjectile : MonoBehaviour
         rb.velocity = moveDirection * speed;
     }
 
-    private void OnTriggerEnter2D(Collider2D collision) {
-        // --- NEW: IGNORE OTHER PROJECTILES ---
-        // This checks if the object hit has an EnemyProjectile component.
-        // If it does, we exit the function immediately so the bullet doesn't destroy itself.
-        if (collision.GetComponent<EnemyProjectile>() != null) {
-            return; 
-        }
+   private void OnTriggerEnter2D(Collider2D collision) {
+    // --- IGNORE OTHER PROJECTILES ---
+    if (collision.GetComponent<EnemyProjectile>() != null) {
+        return;
+    }
 
-        // Hit Player
-        if (collision.CompareTag("Player")) {
-            PlayerStats playerStats = collision.GetComponentInParent<PlayerStats>();
-
-            if (playerStats != null) {
-                playerStats.TakeDamage(damageAmount);
-            }
-            
-            Destroy(gameObject); 
+    // Hit Player
+    if (collision.CompareTag("Player")) {
+        PlayerStats playerStats = collision.GetComponentInParent<PlayerStats>();
+        if (playerStats != null) {
+            playerStats.TakeDamage(damageAmount);
         }
-        
-        // Hit Obstacles (Walls/Trees)
-        if (((1 << collision.gameObject.layer) & obstacleLayer) != 0) {
+        Destroy(gameObject);
+    }
+    
+    // Hit Obstacles (Walls/Trees)
+    if (((1 << collision.gameObject.layer) & obstacleLayer) != 0) {
+        // --- THE FIX: Only destroy if it's a solid obstacle (NOT a trigger) ---
+        if (!collision.isTrigger) {
             Destroy(gameObject);
         }
     }
+}
 }

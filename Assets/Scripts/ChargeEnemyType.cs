@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
+[RequireComponent(typeof(LineRenderer))]
 public class ChargeEnemyAI : MonoBehaviour
 {
     private enum State { Chasing, Telegraphing, Charging, Cooldown }
@@ -32,11 +33,11 @@ public class ChargeEnemyAI : MonoBehaviour
     [Range(0, 1)] public float lineOpacity = 0.5f;
     public float lineExtendSpeed = 2f; 
     public float lineWidth = 0.05f;
-    public string lineSortingLayer = "Default"; 
-    public int lineSortingOrder = 10;
     public float maxLineLength = 10f;
     public Vector2 lineOffset; 
-    public float preChargeWait = 0.3f; 
+    public float preChargeWait = 0.8f; 
+    public float rotationSpeed = 5f;   
+    public string sortingLayerName = "Shaow"; // Set to your custom layer
 
     private EnemyPathfinding motor;
     private Rigidbody2D rb; 
@@ -59,7 +60,6 @@ public class ChargeEnemyAI : MonoBehaviour
         }
 
         lineRenderer = GetComponent<LineRenderer>();
-        if (lineRenderer == null) lineRenderer = gameObject.AddComponent<LineRenderer>();
         SetupLine();
 
         if (exclamationMark != null) exclamationMark.SetActive(false);
@@ -75,14 +75,13 @@ public class ChargeEnemyAI : MonoBehaviour
         lineRenderer.enabled = false;
         lineRenderer.useWorldSpace = true;
         lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-        lineRenderer.sortingLayerName = lineSortingLayer;
-        lineRenderer.sortingOrder = lineSortingOrder;
+        lineRenderer.sortingLayerName = "Shadow";
+        lineRenderer.sortingOrder = 0;
     }
 
     private void FixedUpdate() {
         if (health != null && health.IsKnockedBack()) return;
 
-        // Apply velocity only during charge
         if (currentState == State.Charging && rb != null && stateTimer > 0) {
             rb.velocity = chargeDirection * chargeSpeed;
         }
@@ -90,7 +89,6 @@ public class ChargeEnemyAI : MonoBehaviour
 
     private void Update() {
         if (player == null || motor == null) return;
-
         if (health != null && health.IsKnockedBack()) return;
 
         switch (currentState) {
@@ -100,8 +98,6 @@ public class ChargeEnemyAI : MonoBehaviour
             case State.Charging:
                 stateTimer -= Time.deltaTime;
                 if (stateTimer <= 0) {
-                    if (rb != null) rb.velocity = Vector2.zero; 
-                    motor.SetMoveSpeed(0); // Tell motor to ignore physics
                     StartCoroutine(HandleCleanStop()); 
                 }
                 break;
@@ -110,50 +106,57 @@ public class ChargeEnemyAI : MonoBehaviour
 
     private void HandleChasing() {
         float dist = Vector2.Distance(transform.position, player.position);
-        Vector2 dir = (player.position - transform.position).normalized;
-        motor.SetMoveDir(dir);
-        motor.SetMoveSpeed(walkSpeed);
-
         if (dist <= chargeRange && CheckLineOfSight()) {
             StartCoroutine(TelegraphSequence());
+        } else {
+            Vector2 dir = (player.position - transform.position).normalized;
+            motor.SetMoveDir(dir);
+            motor.SetMoveSpeed(walkSpeed);
         }
     }
 
     private IEnumerator TelegraphSequence() {
         currentState = State.Telegraphing;
         motor.SetMoveDir(Vector2.zero); 
-        motor.FlipToTarget(player.position.x);
-
+        
         if (exclamationMark != null) exclamationMark.SetActive(true);
 
-        float flipMultiplier = (GetComponent<SpriteRenderer>().flipX) ? -1 : 1;
-        Vector3 startPos = transform.position + new Vector3(lineOffset.x * flipMultiplier, lineOffset.y, 0);
-        
-        chargeDirection = (player.position - startPos).normalized;
-        Vector3 lockedTargetPos = startPos + (Vector3)(chargeDirection * maxLineLength);
-
-        Color finalColor = lineColor;
-        finalColor.a = lineOpacity;
-        lineRenderer.startColor = finalColor;
-        lineRenderer.endColor = finalColor;
-        
         lineRenderer.enabled = true;
         float progress = 0;
+        float lockWindow = 0.1f; 
+        float trackingDuration = Mathf.Max(0, preChargeWait - lockWindow); 
 
+        Vector3 startPos = GetLineStartPos();
+        chargeDirection = (player.position - startPos).normalized;
+
+        // 1. EXTEND & TRACK
         while (progress < 1f) {
-            if (health != null && health.IsKnockedBack()) {
-                yield return null;
-                continue;
-            }
-
+            if (health != null && health.IsKnockedBack()) { yield return null; continue; }
             progress += Time.deltaTime * lineExtendSpeed;
-            lineRenderer.SetPosition(0, startPos);
-            lineRenderer.SetPosition(1, Vector3.Lerp(startPos, lockedTargetPos, progress));
+            UpdateLineVisuals(progress, lineOpacity);
             yield return null;
         }
 
-        yield return new WaitForSeconds(preChargeWait);
-        
+        // 2. TRACK ONLY
+        float trackingTimer = 0;
+        while (trackingTimer < trackingDuration) {
+            if (health != null && health.IsKnockedBack()) { yield return null; continue; }
+            trackingTimer += Time.deltaTime;
+            UpdateLineVisuals(1f, lineOpacity); 
+            yield return null;
+        }
+
+        // 3. LOCK & FADE (The 0.1s moment)
+        float fadeTimer = 0;
+        while (fadeTimer < lockWindow) {
+            fadeTimer += Time.deltaTime;
+            float fadeAlpha = Mathf.Lerp(lineOpacity, 0, fadeTimer / lockWindow);
+            // We DON'T update direction here, only the start point and alpha
+            UpdateLineVisuals(1f, fadeAlpha, true); 
+            yield return null;
+        }
+
+        // 4. CHARGE
         if (exclamationMark != null) exclamationMark.SetActive(false);
         lineRenderer.enabled = false;
         if (anim != null) anim.SetTrigger("Charge"); 
@@ -164,20 +167,38 @@ public class ChargeEnemyAI : MonoBehaviour
         stateTimer = chargeDuration;
     }
 
+    private void UpdateLineVisuals(float lengthProgress, float alpha, bool isLocked = false) {
+        Vector3 startPos = GetLineStartPos();
+        
+        if (!isLocked) {
+            motor.FlipToTarget(player.position.x);
+            Vector2 targetDir = (player.position - startPos).normalized;
+            chargeDirection = Vector3.Slerp(chargeDirection, targetDir, Time.deltaTime * rotationSpeed);
+        }
+
+        Vector3 targetPos = startPos + (Vector3)(chargeDirection * maxLineLength);
+        lineRenderer.SetPosition(0, startPos);
+        lineRenderer.SetPosition(1, Vector3.Lerp(startPos, targetPos, lengthProgress));
+
+        Color c = lineColor;
+        c.a = alpha;
+        lineRenderer.startColor = c;
+        lineRenderer.endColor = c;
+    }
+
+    private Vector3 GetLineStartPos() {
+        float flipMultiplier = (GetComponent<SpriteRenderer>().flipX) ? -1 : 1;
+        return transform.position + new Vector3(lineOffset.x * flipMultiplier, lineOffset.y, 0);
+    }
+
+    // ... Rest of the helper methods (HandleCleanStop, OnCollisionEnter2D, etc.) stay the same ...
     private IEnumerator HandleCleanStop() {
         if (currentState == State.Cooldown) yield break;
         currentState = State.Cooldown;
-
         Physics2D.IgnoreLayerCollision(gameObject.layer, LayerMask.NameToLayer(enemyLayerName), false);
-
         if (rb != null) rb.velocity = Vector2.zero; 
-        if (motor != null) {
-            motor.SetMoveSpeed(0); 
-            motor.StopMoving();
-        }
-
+        motor.SetMoveSpeed(0); 
         yield return new WaitForSeconds(postChargeWait);
-
         motor.SetMoveSpeed(walkSpeed); 
         currentState = State.Chasing;
     }
@@ -185,18 +206,14 @@ public class ChargeEnemyAI : MonoBehaviour
     private IEnumerator HandleBounceStop(Vector2 collisionPoint) {
         if (currentState == State.Cooldown) yield break;
         currentState = State.Cooldown;
-
         Physics2D.IgnoreLayerCollision(gameObject.layer, LayerMask.NameToLayer(enemyLayerName), false);
-
         if (rb != null) {
             Vector2 recoilDir = ((Vector2)transform.position - collisionPoint).normalized;
             rb.velocity = recoilDir * bounceForce;
             yield return new WaitForSeconds(bounceDuration);
             rb.velocity = Vector2.zero;
         }
-
         yield return new WaitForSeconds(postChargeWait);
-
         motor.SetMoveSpeed(walkSpeed);
         currentState = State.Chasing;
     }
@@ -210,15 +227,12 @@ public class ChargeEnemyAI : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision) {
         if (currentState != State.Charging) return;
-
         Vector2 hitPoint = collision.contacts[0].point;
-
         if (collision.gameObject.CompareTag("Player")) {
             PlayerStats stats = collision.gameObject.GetComponent<PlayerStats>();
             if (stats != null) stats.TakeDamage(damage);
             StartCoroutine(HandleBounceStop(hitPoint));
-        }
-        else if (((1 << collision.gameObject.layer) & obstacleLayer) != 0) {
+        } else if (((1 << collision.gameObject.layer) & obstacleLayer) != 0) {
             StartCoroutine(HandleBounceStop(hitPoint));
         }
     }

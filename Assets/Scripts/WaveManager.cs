@@ -75,6 +75,7 @@ public class WaveManager : MonoBehaviour
 
     private IEnumerator StartWaveSystem()
     {
+        yield return new WaitForSeconds(3.0f);
         while (currentWaveIndex < waves.Count)
         {
             foreach(var config in waves[currentWaveIndex].enemyConfigs) config.currentSpawnedCount = 0;
