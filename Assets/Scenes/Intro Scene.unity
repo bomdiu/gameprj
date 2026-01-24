@@ -156,6 +156,7 @@ RectTransform:
   - {fileID: 573987751}
   - {fileID: 1229434923}
   - {fileID: 566467348}
+  - {fileID: 166111767}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -212,8 +213,8 @@ Canvas:
   m_GameObject: {fileID: 102347691}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 0
-  m_Camera: {fileID: 0}
+  m_RenderMode: 1
+  m_Camera: {fileID: 2146671399}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
@@ -221,11 +222,145 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!1 &166111766
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 166111767}
+  - component: {fileID: 166111769}
+  - component: {fileID: 166111768}
+  m_Layer: 5
+  m_Name: Text (TMP)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &166111767
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 166111766}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 102347692}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 25}
+  m_SizeDelta: {x: 800, y: 50}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &166111768
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 166111766}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_text: New Text
+  m_isRightToLeft: 0
+  m_fontAsset: {fileID: 11400000, guid: 2b93f9859dd21354ca1c547c5a41ef79, type: 2}
+  m_sharedMaterial: {fileID: 4360420245370580170, guid: 2b93f9859dd21354ca1c547c5a41ef79, type: 2}
+  m_fontSharedMaterials: []
+  m_fontMaterial: {fileID: 0}
+  m_fontMaterials: []
+  m_fontColor32:
+    serializedVersion: 2
+    rgba: 16777215
+  m_fontColor: {r: 1, g: 1, b: 1, a: 0}
+  m_enableVertexGradient: 0
+  m_colorMode: 3
+  m_fontColorGradient:
+    topLeft: {r: 1, g: 1, b: 1, a: 1}
+    topRight: {r: 1, g: 1, b: 1, a: 1}
+    bottomLeft: {r: 1, g: 1, b: 1, a: 1}
+    bottomRight: {r: 1, g: 1, b: 1, a: 1}
+  m_fontColorGradientPreset: {fileID: 0}
+  m_spriteAsset: {fileID: 0}
+  m_tintAllSprites: 0
+  m_StyleSheet: {fileID: 0}
+  m_TextStyleHashCode: -1183493901
+  m_overrideHtmlColors: 0
+  m_faceColor:
+    serializedVersion: 2
+    rgba: 4294967295
+  m_fontSize: 16
+  m_fontSizeBase: 16
+  m_fontWeight: 400
+  m_enableAutoSizing: 0
+  m_fontSizeMin: 18
+  m_fontSizeMax: 72
+  m_fontStyle: 0
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
+  m_textAlignment: 65535
+  m_characterSpacing: 0
+  m_wordSpacing: 0
+  m_lineSpacing: 0
+  m_lineSpacingMax: 0
+  m_paragraphSpacing: 0
+  m_charWidthMaxAdj: 0
+  m_enableWordWrapping: 1
+  m_wordWrappingRatios: 0.4
+  m_overflowMode: 0
+  m_linkedTextComponent: {fileID: 0}
+  parentLinkedComponent: {fileID: 0}
+  m_enableKerning: 1
+  m_enableExtraPadding: 0
+  checkPaddingRequired: 0
+  m_isRichText: 1
+  m_parseCtrlCharacters: 1
+  m_isOrthographic: 1
+  m_isCullingEnabled: 0
+  m_horizontalMapping: 0
+  m_verticalMapping: 0
+  m_uvLineOffset: 0
+  m_geometrySortingOrder: 0
+  m_IsTextObjectScaleStatic: 0
+  m_VertexBufferAutoSizeReduction: 0
+  m_useMaxVisibleDescender: 1
+  m_pageToDisplay: 1
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_isUsingLegacyAnimationComponent: 0
+  m_isVolumetricText: 0
+  m_hasFontAssetChanged: 0
+  m_baseMaterial: {fileID: 0}
+  m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!222 &166111769
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 166111766}
+  m_CullTransparentMesh: 1
 --- !u!1 &432854523
 GameObject:
   m_ObjectHideFlags: 0
@@ -787,6 +922,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1877419861}
   - component: {fileID: 1877419862}
+  - component: {fileID: 1877419863}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -824,64 +960,176 @@ MonoBehaviour:
   fadeOverlay: {fileID: 566467351}
   transitionSpeed: 1
   noiseOverlay: {fileID: 1229434926}
-  introVideo: {fileID: 32900000, guid: 61865210a6b8fe54d917724112b5b8ec, type: 3}
-  videoSpeed: 0.5
+  narrativeTextUI: {fileID: 166111768}
+  textFadeDuration: 2
+  bgmClip: {fileID: 8300000, guid: c8159f1b39eaf644eb2a95f83346a350, type: 3}
+  maxVolume: 1
+  audioFadeDuration: 2
+  musicStartDelay: 2
+  introVideo: {fileID: 32900000, guid: 5925b8b950ea863458a6ef04ff01db4e, type: 3}
+  videoSpeed: 0.3
+  videoStartDelay: 1
   videoDisplay: {fileID: 432854528}
   videoPlayer: {fileID: 432854527}
-  videoCG: {fileID: 432854526}
+  videoSubtitles:
+  - text: On the day of enrollment at Eclipse Academy,
+    duration: 2
+  - text: a rare event occurred - the Soul Eclipse.
+    duration: 2
   imageSequence:
   - note: 
     image: {fileID: 21300000, guid: 42b7e7353a6efcd41a1d92cdb5f34a2d, type: 3}
-    displayTime: 1
+    dialogues:
+    - A wave of dark mana swept through the academy
+    timePerLine: 3
     isNewScene: 1
-    useKenBurns: 1
-    zoomScale: 1.1
   - note: 
     image: {fileID: 21300000, guid: 7fe5cc11fac09f54d9a77a37dbe56785, type: 3}
-    displayTime: 1
+    dialogues:
+    - awakening what had long been buried within the human mind.
+    timePerLine: 4
     isNewScene: 0
-    useKenBurns: 1
-    zoomScale: 1.1
   - note: 
     image: {fileID: 21300000, guid: ba35f750c22122146a8327a14abbfca3, type: 3}
-    displayTime: 1
+    dialogues:
+    - Students collapsed. Professors vanished.
+    timePerLine: 3
     isNewScene: 1
-    useKenBurns: 1
-    zoomScale: 1.1
   - note: 
     image: {fileID: 21300000, guid: 591a3e72eca121040ace654a05fab46d, type: 3}
-    displayTime: 1
+    dialogues:
+    - From cracks in reality, the Fragmenta emerged
+    - '- creatures born from fear, doubt, and hidden pain.'
+    timePerLine: 4
     isNewScene: 0
-    useKenBurns: 1
-    zoomScale: 1.1
   - note: 
-    image: {fileID: 21300000, guid: bd62f1b9a657e83408150eb932cb17d4, type: 3}
-    displayTime: 1
+    image: {fileID: 21300000, guid: 7465d06341a7f214dbeade540882f68a, type: 3}
+    dialogues:
+    - Only one remained conscious.
+    - Auria.
+    timePerLine: 1.5
     isNewScene: 1
-    useKenBurns: 1
-    zoomScale: 1.1
   - note: 
     image: {fileID: 21300000, guid: 070908304d004e24dbc298741a9c6a86, type: 3}
-    displayTime: 1
+    dialogues:
+    - 'Her Soul Ember resisted the darkness,
+
+      revealing a terrible truth'
+    - '- This shadow was never external'
+    timePerLine: 4
     isNewScene: 1
-    useKenBurns: 1
-    zoomScale: 1.1
   - note: 
     image: {fileID: 21300000, guid: 43390ad1e25cd92498b98affe55693d6, type: 3}
-    displayTime: 1
+    dialogues:
+    - It was always here.
+    - Waiting to be seen.
+    timePerLine: 1
     isNewScene: 0
-    useKenBurns: 1
-    zoomScale: 1.1
   - note: 
     image: {fileID: 0}
-    displayTime: 1
+    dialogues: []
+    timePerLine: 0
     isNewScene: 0
-    useKenBurns: 1
-    zoomScale: 1.1
   backImage: {fileID: 1293411038}
   frontImage: {fileID: 1726092405}
   frontCG: {fileID: 1726092402}
   nextSceneName: SampleScene 1
+--- !u!82 &1877419863
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1877419859}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &1938974595
 GameObject:
   m_ObjectHideFlags: 0

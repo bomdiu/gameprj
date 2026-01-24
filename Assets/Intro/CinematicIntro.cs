@@ -4,186 +4,262 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
 using UnityEngine.SceneManagement;
+using TMPro;
 
+[RequireComponent(typeof(AudioSource))]
 public class CinematicIntro : MonoBehaviour
 {
-    [Header("Overlay & Effects")]
-    public CanvasGroup fadeOverlay;      // Màn che đen (Fade Overlay)
-    public float transitionSpeed = 1.0f; // Tốc độ chuyển cảnh đen
-    public RawImage noiseOverlay;        // (Mới) Lớp nhiễu hạt/Texture động
+    [Header("=== 1. CẤU HÌNH UI & OVERLAY ===")]
+    public CanvasGroup fadeOverlay;      
+    public float transitionSpeed = 1.0f; 
+    public RawImage noiseOverlay;        
+    public TextMeshProUGUI narrativeTextUI; 
+    public float textFadeDuration = 0.5f;
 
-    [Header("1. Video Settings")]
-    public VideoClip introVideo;
-    [Range(0.1f, 3.0f)] public float videoSpeed = 1.0f;
-    public RawImage videoDisplay;
-    public VideoPlayer videoPlayer;
-    public CanvasGroup videoCG;
+    [Header("=== 2. CẤU HÌNH AUDIO ===")]
+    public AudioClip bgmClip;          
+    [Range(0f, 1f)] public float maxVolume = 0.5f;     
+    public float audioFadeDuration = 2f; 
+    
+    [Tooltip("Số giây im lặng trước khi nhạc bắt đầu chạy")]
+    public float musicStartDelay = 0f; 
+
+    private AudioSource audioSource;
 
     [System.Serializable]
-    public class StoryPair
+    public class VideoSubtitle
     {
-        public string note;             // Ghi chú cho dễ nhớ
-        public Sprite image;            // Ảnh hiển thị
-        public float displayTime = 4f;  // Thời gian dừng hình
-        public bool isNewScene;         // True = Tối sầm màn hình rồi mới hiện
-        public bool useKenBurns = true; // True = Bật hiệu ứng Zoom chậm
-        public float zoomScale = 0.1f;  // Zoom đến mức nào (VD: 1.1 là to hơn 10%)
+        [TextArea(2, 3)] public string text; 
+        public float duration = 3f;          
     }
 
-    [Header("2. Image Sequence")]
-    public List<StoryPair> imageSequence;
+    [Header("=== 3. CẤU HÌNH VIDEO ===")]
+    public VideoClip introVideo;       
+    [Range(0.1f, 3.0f)] public float videoSpeed = 1.0f; 
     
-    [Header("UI Components")]
-    public Image backImage;  // Layer hiển thị chính
-    public Image frontImage; // Layer dùng để cross-fade đè lên
-    public CanvasGroup frontCG;
+    // --- MỚI: DELAY CHO VIDEO ---
+    [Tooltip("Số giây màn hình đen trước khi Video bắt đầu hiện")]
+    public float videoStartDelay = 0f;
 
-    [Header("Navigation")]
-    public string nextSceneName = "GameplayScene";
+    public RawImage videoDisplay;      
+    public VideoPlayer videoPlayer;
+    public List<VideoSubtitle> videoSubtitles; 
 
-    // Biến nội bộ để quản lý Ken Burns
-    private Coroutine currentKenBurns;
+    [System.Serializable]
+    public class StoryStep
+    {
+        public string note;             
+        public Sprite image;
+        [TextArea(2, 4)] public string[] dialogues; 
+        public float timePerLine = 3f;  
+        public bool isNewScene;         
+    }
+
+    [Header("=== 4. CẤU HÌNH ẢNH ===")]
+    public List<StoryStep> imageSequence; 
+    
+    [Header("=== 5. UI REFERENCES ===")]
+    public Image backImage;  
+    public Image frontImage; 
+    public CanvasGroup frontCG; 
+
+    [Header("=== 6. ĐIỀU HƯỚNG ===")]
+    public string nextSceneName = "GameplayScene"; 
 
     void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+
         // Setup ban đầu
         videoDisplay.gameObject.SetActive(false); 
         backImage.color = Color.white;
         frontImage.color = Color.white;
         frontCG.alpha = 0; 
         
-        // Đảm bảo Noise Overlay luôn bật (nếu có)
         if (noiseOverlay != null) noiseOverlay.gameObject.SetActive(true);
+        // Đảm bảo màn hình đen thui ngay từ đầu
+        if (fadeOverlay != null) fadeOverlay.alpha = 1f;
+        if (narrativeTextUI != null) narrativeTextUI.alpha = 0f;
 
-        StartCoroutine(PlaySequence());
+        // Chạy song song 2 luồng
+        StartCoroutine(PlayVisualSequence());
+        StartCoroutine(PlayMusicWithDelay());
     }
 
-    IEnumerator PlaySequence()
+    // --- LUỒNG 1: XỬ LÝ NHẠC ---
+    IEnumerator PlayMusicWithDelay()
     {
-        // ============ PHASE 1: VIDEO ============
+        if (bgmClip == null) yield break;
+
+        if (musicStartDelay > 0)
+        {
+            yield return new WaitForSeconds(musicStartDelay);
+        }
+
+        audioSource.clip = bgmClip;
+        audioSource.volume = 0f; 
+        audioSource.Play();
+
+        yield return StartCoroutine(FadeMusic(maxVolume, audioFadeDuration));
+    }
+
+    // --- LUỒNG 2: XỬ LÝ HÌNH ẢNH (VIDEO + ẢNH) ---
+    IEnumerator PlayVisualSequence()
+    {
+        // ==========================================
+        // PHASE 1: VIDEO (CÓ DELAY)
+        // ==========================================
         if (introVideo != null)
         {
+            // --- MỚI: CHỜ VIDEO START DELAY ---
+            // Trong thời gian này màn hình vẫn đen (do fadeOverlay.alpha = 1 từ Start)
+            if (videoStartDelay > 0)
+            {
+                yield return new WaitForSeconds(videoStartDelay);
+            }
+
             videoDisplay.gameObject.SetActive(true);
             videoPlayer.clip = introVideo;
             videoPlayer.playbackSpeed = videoSpeed;
             videoPlayer.Prepare();
+            
+            // Đợi video load texture
             while (!videoPlayer.isPrepared) yield return null;
             
             videoDisplay.texture = videoPlayer.texture;
             videoPlayer.Play();
 
-            // Fade in Video từ đen
-            yield return StartCoroutine(FadeAlpha(fadeOverlay, 1f, 0f));
+            float totalVideoDuration = (float)introVideo.length / videoSpeed;
+            float startTime = Time.time; 
 
-            // Chờ video chạy
-            float duration = (float)introVideo.length / videoSpeed;
-            yield return new WaitForSeconds(duration);
+            // Fade Mở màn hình (Video hiện ra)
+            yield return StartCoroutine(FadeCanvasGroup(fadeOverlay, 1f, 0f));
 
-            // Fade out Video về đen
-            yield return StartCoroutine(FadeAlpha(fadeOverlay, 0f, 1f));
+            // Chạy Subtitles Video
+            foreach (VideoSubtitle sub in videoSubtitles)
+            {
+                if (Time.time - startTime >= totalVideoDuration) break;
+                narrativeTextUI.text = sub.text;
+                yield return StartCoroutine(FadeTextAlpha(1f, textFadeDuration));
+
+                float wait = sub.duration - (textFadeDuration * 2);
+                if (wait < 0.2f) wait = 0.2f;
+                yield return new WaitForSeconds(wait);
+
+                yield return StartCoroutine(FadeTextAlpha(0f, textFadeDuration));
+            }
+
+            // Chờ hết video
+            float elapsedTime = Time.time - startTime;
+            float remainingTime = totalVideoDuration - elapsedTime;
+            if (remainingTime > 0) yield return new WaitForSeconds(remainingTime);
+
+            // Fade Đóng màn hình (Video tối đi)
+            yield return StartCoroutine(FadeCanvasGroup(fadeOverlay, 0f, 1f));
             
             videoPlayer.Stop();
             videoDisplay.gameObject.SetActive(false);
         }
+        else 
+        {
+            // Nếu không có video, nhưng người dùng vẫn set delay cho video?
+            // Ta coi như đây là thời gian chờ trước khi vào ảnh
+            if (videoStartDelay > 0)
+            {
+                yield return new WaitForSeconds(videoStartDelay);
+            }
+        }
 
-        // ============ PHASE 2: ẢNH TĨNH (KÈM KEN BURNS) ============
-        
-        // Setup ảnh đầu tiên trong bóng tối
+        // ==========================================
+        // PHASE 2: ẢNH TĨNH
+        // ==========================================
+        if (imageSequence.Count > 0) backImage.sprite = imageSequence[0].image;
+
+        // Fade Mở màn hình (Ảnh hiện ra)
+        yield return StartCoroutine(FadeCanvasGroup(fadeOverlay, 1f, 0f));
+
         if (imageSequence.Count > 0)
         {
-            backImage.sprite = imageSequence[0].image;
-            // Reset scale ảnh đầu
-            backImage.rectTransform.localScale = Vector3.one; 
+            yield return StartCoroutine(HandleDialogueLoop(imageSequence[0]));
         }
 
-        // Hiện ảnh đầu tiên: Mở màn đen
-        yield return StartCoroutine(FadeAlpha(fadeOverlay, 1f, 0f));
-
-        // Bắt đầu chạy từng ảnh
-        for (int i = 0; i < imageSequence.Count; i++)
+        for (int i = 1; i < imageSequence.Count; i++)
         {
-            StoryPair step = imageSequence[i];
+            StoryStep step = imageSequence[i];
+            if (narrativeTextUI != null) narrativeTextUI.alpha = 0f;
 
-            // 1. Kích hoạt Ken Burns cho ảnh hiện tại (backImage)
-            // Nếu có coroutine cũ đang chạy, dừng nó lại
-            if (currentKenBurns != null) StopCoroutine(currentKenBurns);
-            if (step.useKenBurns)
+            if (step.isNewScene)
             {
-                // Chạy Ken Burns trên backImage trong suốt thời gian hiển thị
-                currentKenBurns = StartCoroutine(RunKenBurns(backImage.rectTransform, step.zoomScale, step.displayTime + 2f)); 
-                // Cộng thêm 2s để nó vẫn zoom tiếp lúc đang chuyển cảnh sau
+                yield return StartCoroutine(FadeCanvasGroup(fadeOverlay, 0f, 1f));
+                backImage.sprite = step.image;
+                frontCG.alpha = 0; 
+                yield return new WaitForSeconds(0.5f); 
+                yield return StartCoroutine(FadeCanvasGroup(fadeOverlay, 1f, 0f));
+            }
+            else
+            {
+                frontImage.sprite = step.image;
+                frontCG.alpha = 0;
+                float t = 0f;
+                while (t < transitionSpeed)
+                {
+                    t += Time.deltaTime;
+                    frontCG.alpha = Mathf.Lerp(0f, 1f, t / transitionSpeed);
+                    yield return null;
+                }
+                frontCG.alpha = 1f;
+                backImage.sprite = frontImage.sprite;
+                frontCG.alpha = 0;
             }
 
-            // 2. Chờ người chơi xem ảnh
-            yield return new WaitForSeconds(step.displayTime);
-
-            // 3. Chuẩn bị chuyển sang ảnh tiếp theo (nếu còn)
-            if (i < imageSequence.Count - 1)
-            {
-                StoryPair nextStep = imageSequence[i + 1];
-
-                if (nextStep.isNewScene)
-                {
-                    // === CHUYỂN CẢNH ĐEN (NEW SCENE) ===
-                    yield return StartCoroutine(FadeAlpha(fadeOverlay, 0f, 1f)); // Tối dần
-                    
-                    // Trong bóng tối, thay ảnh và reset vị trí
-                    backImage.sprite = nextStep.image;
-                    backImage.rectTransform.localScale = Vector3.one; // Reset zoom về 1
-                    frontCG.alpha = 0; 
-                    
-                    yield return new WaitForSeconds(0.5f); // Nghỉ
-                    yield return StartCoroutine(FadeAlpha(fadeOverlay, 1f, 0f)); // Sáng dần
-                }
-                else
-                {
-                    // === CROSS-FADE (NỐI TIẾP) ===
-                    // Setup ảnh mới lên lớp trên (Front)
-                    frontImage.sprite = nextStep.image;
-                    frontImage.rectTransform.localScale = Vector3.one; // Reset zoom layer trên
-                    frontCG.alpha = 0;
-
-                    // Chạy Ken Burns nhẹ cho cả layer trên lúc nó đang hiện ra (tùy chọn)
-                    StartCoroutine(RunKenBurns(frontImage.rectTransform, nextStep.zoomScale, nextStep.displayTime + 2f));
-
-                    // Fade layer trên hiện ra
-                    float t = 0f;
-                    while (t < transitionSpeed)
-                    {
-                        t += Time.deltaTime;
-                        frontCG.alpha = Mathf.Lerp(0f, 1f, t / transitionSpeed);
-                        yield return null;
-                    }
-                    frontCG.alpha = 1f;
-
-                    // TRÁO ĐỔI LAYER (Swap)
-                    // Đưa ảnh từ Front xuống Back để làm nền cho vòng lặp sau
-                    backImage.sprite = frontImage.sprite;
-                    // Đồng bộ scale của Back cho bằng Front để không bị giật hình
-                    backImage.rectTransform.localScale = frontImage.rectTransform.localScale; 
-                    
-                    frontCG.alpha = 0;
-
-                    // Tiếp tục chạy Ken Burns cho Back (vì giờ nó đang giữ hình ảnh chính)
-                    if (currentKenBurns != null) StopCoroutine(currentKenBurns);
-                    if (nextStep.useKenBurns)
-                    {
-                        // Tính toán thời gian còn lại cần zoom
-                        currentKenBurns = StartCoroutine(RunKenBurns(backImage.rectTransform, nextStep.zoomScale, nextStep.displayTime));
-                    }
-                }
-            }
+            yield return StartCoroutine(HandleDialogueLoop(step));
         }
 
-        // ============ PHASE 3: KẾT THÚC ============
-        yield return StartCoroutine(FadeAlpha(fadeOverlay, 0f, 1f));
-        yield return new WaitForSeconds(1f); 
+        // ==========================================
+        // PHASE 3: KẾT THÚC
+        // ==========================================
+        if (narrativeTextUI != null) StartCoroutine(FadeTextAlpha(0f, 0.5f));
+        
+        StartCoroutine(FadeMusic(0f, 1.5f)); 
+
+        yield return StartCoroutine(FadeCanvasGroup(fadeOverlay, 0f, 1f));
+        
+        yield return new WaitForSeconds(1.5f); 
         SceneManager.LoadScene(nextSceneName);
     }
 
-    // Hàm phụ trợ: Fade CanvasGroup
-    IEnumerator FadeAlpha(CanvasGroup cg, float start, float end)
+    // --- CÁC HÀM PHỤ TRỢ GIỮ NGUYÊN ---
+    IEnumerator FadeMusic(float targetVol, float duration)
     {
+        if (audioSource == null) yield break;
+        float startVol = audioSource.volume;
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            audioSource.volume = Mathf.Lerp(startVol, targetVol, t / duration);
+            yield return null;
+        }
+        audioSource.volume = targetVol;
+    }
+
+    IEnumerator FadeTextAlpha(float targetAlpha, float duration)
+    {
+        if (narrativeTextUI == null) yield break;
+        float startAlpha = narrativeTextUI.alpha;
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            narrativeTextUI.alpha = Mathf.Lerp(startAlpha, targetAlpha, t / duration);
+            yield return null;
+        }
+        narrativeTextUI.alpha = targetAlpha;
+    }
+
+    IEnumerator FadeCanvasGroup(CanvasGroup cg, float start, float end)
+    {
+        if (cg == null) yield break;
         float t = 0f;
         while (t < transitionSpeed)
         {
@@ -194,20 +270,23 @@ public class CinematicIntro : MonoBehaviour
         cg.alpha = end;
     }
 
-    // Hàm phụ trợ: Hiệu ứng Ken Burns (Zoom từ từ)
-    IEnumerator RunKenBurns(RectTransform target, float targetScale, float duration)
+    IEnumerator HandleDialogueLoop(StoryStep step)
     {
-        float t = 0f;
-        Vector3 startSize = target.localScale;
-        Vector3 endSize = new Vector3(targetScale, targetScale, 1f);
-
-        while (t < duration)
+        if (step.dialogues == null || step.dialogues.Length == 0)
         {
-            t += Time.deltaTime;
-            // Dùng SmoothStep cho chuyển động mượt mà hơn Lerp thường
-            float progress = t / duration;
-            target.localScale = Vector3.Lerp(startSize, endSize, progress);
-            yield return null;
+            yield return new WaitForSeconds(step.timePerLine);
+            yield break;
+        }
+        foreach (string line in step.dialogues)
+        {
+            if (string.IsNullOrEmpty(line)) continue;
+            narrativeTextUI.text = line;
+            yield return StartCoroutine(FadeTextAlpha(1f, textFadeDuration));
+            float waitTime = step.timePerLine - (textFadeDuration * 2);
+            if (waitTime < 0.5f) waitTime = 0.5f; 
+            yield return new WaitForSeconds(waitTime);
+            yield return StartCoroutine(FadeTextAlpha(0f, textFadeDuration));
+            yield return new WaitForSeconds(0.2f);
         }
     }
 }
