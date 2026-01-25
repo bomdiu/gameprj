@@ -7,12 +7,16 @@ public class Skill_Summon : MonoBehaviour
     [Header("Cài đặt")]
     public BossController boss;
     public SummonSkillData skillData;
+
+    [Header("Cài đặt Môi trường (QUAN TRỌNG)")]
+    // [THAY ĐỔI] Dùng Tag thay vì LayerMask
+    [Tooltip("Điền đúng tên Tag của tường/vật cản vào đây (VD: Obstacles)")]
+    public string obstacleTag = "Obstacles"; 
     
     [Header("Hiệu ứng")]
-    public GameObject spawnIndicatorPrefab; // Prefab vòng tròn
+    public GameObject spawnIndicatorPrefab; 
 
     public float currentCooldown = 0f;
-    // Thêm dòng này vào bất kỳ chỗ nào trong class skill
     public bool IsReady => currentCooldown <= 0;
 
     private void Update()
@@ -21,7 +25,6 @@ public class Skill_Summon : MonoBehaviour
         {
             currentCooldown -= Time.deltaTime;
         }
-      
     }
 
     public void ActivateSkill()
@@ -32,27 +35,21 @@ public class Skill_Summon : MonoBehaviour
     // --- LUỒNG 1: QUẢN LÝ HÀNH ĐỘNG CỦA BOSS ---
     private IEnumerator ExecuteSummonRoutine()
     {
-        // 1. Boss bắt đầu diễn
         boss.ChangeState(BossState.Attacking);
         boss.rb.velocity = Vector2.zero;
         
         boss.FacePlayer();
-        boss.PlayAnim("Cry"); // Boss bắt đầu khóc
+        boss.PlayAnim("Cry"); 
 
-        // 2. Kích hoạt quy trình gọi đệ (Chạy song song, không bắt Boss đợi)
         StartCoroutine(ProcessSpawnSequence());
 
-        // 3. Boss cứ khóc cho đến hết thời gian quy định (totalCastDuration)
-        // Dù quái ra xong hay chưa thì Boss vẫn khóc cho đủ diễn xuất
         yield return new WaitForSeconds(skillData.totalCastDuration);
 
-        // 4. Boss nghỉ mệt
         boss.ChangeState(BossState.Recovering);
-        boss.PlayAnim("Idle"); // Về Idle thở
+        boss.PlayAnim("Idle"); 
         
         yield return new WaitForSeconds(skillData.recoverTime);
 
-        // 5. Xong
         boss.ChangeState(BossState.Idle);
         currentCooldown = skillData.autoCooldown;
     }
@@ -60,53 +57,77 @@ public class Skill_Summon : MonoBehaviour
     // --- LUỒNG 2: QUẢN LÝ VÒNG TRÒN & QUÁI ---
     private IEnumerator ProcessSpawnSequence()
     {
-        // Duyệt qua từng loại quái trong danh sách
         foreach (var wave in skillData.minionWaves)
         {
             for (int i = 0; i < wave.count; i++)
             {
-                // Tính vị trí ngẫu nhiên cho con quái này
-                Vector2 spawnPos = (Vector2)transform.position + Random.insideUnitCircle * skillData.spawnRadius;
+                // Tìm vị trí hợp lệ (tránh Tag tường)
+                Vector2 spawnPos = GetValidSpawnPosition();
 
-                // Gọi hàm xử lý riêng cho từng con (để chúng nó tự quản lý thời gian của mình)
                 StartCoroutine(SpawnSingleMinion(wave.prefab, spawnPos));
                 
-                // (Tùy chọn) Thêm delay nhỏ giữa các con để chúng không hiện ra cùng 1 frame (nhìn tự nhiên hơn)
                 yield return new WaitForSeconds(0.1f);
             }
         }
     }
 
-    // Hàm xử lý vòng đời của 1 lần spawn: Vòng tròn hiện -> Đợi -> Quái hiện -> Vòng tròn mất
+    // [MỚI] Hàm tìm vị trí spawn hợp lệ dựa trên TAG
+    private Vector2 GetValidSpawnPosition()
+    {
+        int maxAttempts = 15; 
+        float checkRadius = 0.5f; 
+
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            Vector2 randomPoint = (Vector2)transform.position + Random.insideUnitCircle * skillData.spawnRadius;
+
+            // 1. Quét tất cả mọi thứ tại điểm đó
+            Collider2D[] hits = Physics2D.OverlapCircleAll(randomPoint, checkRadius);
+
+            bool hitObstacle = false;
+            
+            // 2. Duyệt qua danh sách xem có cái nào là Tường không
+            foreach (var hit in hits)
+            {
+                if (hit.CompareTag(obstacleTag))
+                {
+                    hitObstacle = true;
+                    break; // Dính tường rồi, dừng kiểm tra, thử điểm khác
+                }
+            }
+
+            // 3. Nếu không dính tường -> Vị trí ngon
+            if (!hitObstacle)
+            {
+                return randomPoint;
+            }
+        }
+
+        // Nếu thử mãi vẫn dính tường -> Trả về vị trí Boss
+        return transform.position;
+    }
+
     private IEnumerator SpawnSingleMinion(GameObject minionPrefab, Vector2 position)
     {
-        // 1. Hiện vòng tròn (Telegraph)
         GameObject indicator = null;
         if (spawnIndicatorPrefab != null)
         {
             indicator = Instantiate(spawnIndicatorPrefab, position, Quaternion.identity);
-            // Có thể set parent là null để nó nằm im dưới đất, không chạy theo boss
         }
 
-        // 2. Đợi đến "thời điểm vàng" để quái xuất hiện
-        // (Ví dụ: Vòng tròn tồn tại 1.5s, nhưng giây thứ 1.0 là quái hiện ra)
         yield return new WaitForSeconds(skillData.spawnDelay);
 
-        // 3. Spawn Quái
         if (minionPrefab != null)
         {
             Instantiate(minionPrefab, position, Quaternion.identity);
-            // Thêm VFX nổ/bụi ở đây nếu muốn
         }
 
-        // 4. Đợi nốt thời gian còn lại của vòng tròn (nếu có) rồi xóa vòng tròn
         float remainingTime = skillData.indicatorLifeTime - skillData.spawnDelay;
         if (remainingTime > 0)
         {
             yield return new WaitForSeconds(remainingTime);
         }
 
-        // 5. Xóa vòng tròn
         if (indicator != null)
         {
             Destroy(indicator);

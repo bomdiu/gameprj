@@ -1335,7 +1335,7 @@ GameObject:
   - component: {fileID: 502573528}
   m_Layer: 0
   m_Name: Wall (1)
-  m_TagString: Untagged
+  m_TagString: Obstacles
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1387,7 +1387,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -0.56397295, y: 0}
+  m_Offset: {x: -0.4767084, y: 1.1414726}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -1398,7 +1398,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 26.19281, y: 1}
+  m_Size: {x: 31.690573, y: 3.2829452}
   m_EdgeRadius: 0
 --- !u!4 &513393701 stripped
 Transform:
@@ -34892,7 +34892,7 @@ GameObject:
   - component: {fileID: 1261897385}
   m_Layer: 0
   m_Name: Wall
-  m_TagString: Untagged
+  m_TagString: Obstacles
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -35146,7 +35146,7 @@ GameObject:
   - component: {fileID: 1323661757}
   m_Layer: 0
   m_Name: Wall (3)
-  m_TagString: Untagged
+  m_TagString: Obstacles
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -35198,7 +35198,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -9.056101, y: -0.62528515}
+  m_Offset: {x: -10.498376, y: -0.974349}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -35209,7 +35209,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1, y: 14.443642}
+  m_Size: {x: 3.88455, y: 20.203207}
   m_EdgeRadius: 0
 --- !u!4 &1357969640 stripped
 Transform:
@@ -35573,6 +35573,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   boss: {fileID: 1429916193}
   skillData: {fileID: 11400000, guid: ba52b2bc6084e8a47a9a3ff019d66ea0, type: 2}
+  obstacleTag: Obstacles
   spawnIndicatorPrefab: {fileID: 7513434861039698068, guid: 3a009fc93d2c14b438b1b313619d1783, type: 3}
   currentCooldown: 0
 --- !u!114 &1429916195
@@ -35645,7 +35646,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5aa30ceea6682c747b568e8a3f714cee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 1000
+  maxHealth: 500
   deathSortingLayer: Foreground
   damageTextPrefab: {fileID: 8110601638250219120, guid: a12e825899b06414d8893e0404a71d10, type: 3}
   hitstopDuration: 0.08
@@ -35655,12 +35656,14 @@ MonoBehaviour:
   squashHoldDuration: 0.05
   morphRestoreSpeed: 5
   deathParticlePrefab: {fileID: 5744155556297248092, guid: 54233372e8c073e4aab2d9ec523963a0, type: 3}
-  deathHitstop: 1
-  deathDestroyDelay: 1.5
-  deathSquashScale: {x: 1.2, y: 0.8, z: 1}
+  deathDestroyDelay: 6
+  outroSceneName: Outro Scene
   isFacingRightByDefault: 1
   currentHealth: 0
   playerWeaponTag: Untagged
+  explosionDuration: 1
+  fadeDuration: 3
+  fadeColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!114 &1429916199
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36402,7 +36405,7 @@ GameObject:
   - component: {fileID: 1598382951}
   m_Layer: 0
   m_Name: Wall (4)
-  m_TagString: Untagged
+  m_TagString: Obstacles
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -36454,7 +36457,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -9.056101, y: -0.62528515}
+  m_Offset: {x: -7.544486, y: -0.93071747}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -36465,7 +36468,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1, y: 14.443642}
+  m_Size: {x: 4.0232296, y: 20.203209}
   m_EdgeRadius: 0
 --- !u!4 &1633977403 stripped
 Transform:
@@ -36963,7 +36966,7 @@ GameObject:
   - component: {fileID: 1845883130}
   m_Layer: 0
   m_Name: Wall (2)
-  m_TagString: Untagged
+  m_TagString: Obstacles
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -37015,7 +37018,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -0.56397295, y: 0}
+  m_Offset: {x: -0.45489025, y: -1.5082633}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -37026,7 +37029,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 26.19281, y: 1}
+  m_Size: {x: 31.734213, y: 4.0165267}
   m_EdgeRadius: 0
 --- !u!1 &1860713834
 GameObject:
