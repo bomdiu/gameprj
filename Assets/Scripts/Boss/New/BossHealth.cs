@@ -1,8 +1,13 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement; 
+using UnityEngine.UI; // [QUAN TRỌNG] Cần thư viện này để làm Fade màn hình
 
 public class BossHealth : MonoBehaviour
 {
+    // =========================================================
+    // PHẦN CŨ CỦA BẠN (GIỮ NGUYÊN KHÔNG ĐỤNG CHẠM)
+    // =========================================================
     [Header("Stats Configuration")]
     public int maxHealth = 1000;
 
@@ -14,29 +19,44 @@ public class BossHealth : MonoBehaviour
     public GameObject damageTextPrefab; 
 
     [Header("Juice Settings")]
-    [SerializeField] private float hitstopDuration = 0.08f; // Slightly longer for boss impact
-    [SerializeField] private float knockbackForce = 0f;     // Bosses typically don't get knocked back far
-    [SerializeField] private float knockbackStunTime = 0.0f; // Bosses might not get stunned easily
+    [SerializeField] private float hitstopDuration = 0.08f; 
+    [SerializeField] private float knockbackForce = 0f;     
+    [SerializeField] private float knockbackStunTime = 0.0f; 
 
     [Header("Morph (Squash & Stretch)")]
     [Tooltip("Tỷ lệ bẹt (X rộng ra, Y lùn đi)")]
-    [SerializeField] private Vector3 squashScale = new Vector3(1.1f, 0.9f, 1f); // Less squash for big boss
+    [SerializeField] private Vector3 squashScale = new Vector3(1.1f, 0.9f, 1f); 
     [Tooltip("Thời gian giữ trạng thái bẹt (giây)")]
     [SerializeField] private float squashHoldDuration = 0.05f; 
     [Tooltip("Tốc độ nảy lại hình dạng ban đầu")]
     [SerializeField] private float morphRestoreSpeed = 5f;
 
-    [Header("Death Juice")]
+    // =========================================================
+    // PHẦN MỚI: CẤU HÌNH DEATH & OUTRO (ĐÃ BỔ SUNG)
+    // =========================================================
+    [Header("Death Sequence & Outro")]
     [SerializeField] private GameObject deathParticlePrefab;
-    [SerializeField] private float deathHitstop = 1.0f; // Epic slow motion on death
-    [SerializeField] private float deathDestroyDelay = 3.0f; // Time for death animation to play
-    [SerializeField] private Vector3 deathSquashScale = new Vector3(1.2f, 0.8f, 1f);
     
+    [Tooltip("Thời gian để Boss diễn hết Animation chết (Hãy chỉnh khớp với clip Animation)")]
+    [SerializeField] private float deathDestroyDelay = 3.0f; // Dùng biến cũ của bạn làm thời gian Anim
+
+    [Tooltip("Thời gian chờ hiệu ứng nổ diễn ra trước khi bắt đầu Fade màn hình")]
+    public float explosionDuration = 1.0f; // [MỚI]
+
+    [Tooltip("Thời gian màn hình trắng dần")]
+    public float fadeDuration = 2.0f; // [MỚI]
+    
+    [Tooltip("Màu chuyển cảnh (Mặc định là Trắng)")]
+    public Color fadeColor = Color.white; // [MỚI]
+
+    [Tooltip("Tên màn chơi Outro (nhớ Add vào Build Settings)")]
+    public string outroSceneName = "Outro"; 
+
     [Header("Visual Orientation")]
     [SerializeField] private bool isFacingRightByDefault = true; 
 
     [Header("Live Stats")]
-    public float currentHealth; // Boss health often uses float for precise phases
+    public float currentHealth; 
     
     // References
     private DamageFlash damageFlash;
@@ -48,7 +68,7 @@ public class BossHealth : MonoBehaviour
     private Coroutine morphCoroutine;
     private bool isDead = false; 
 
-    // --- NEW: COLLISION SETTINGS ---
+    // --- COLLISION SETTINGS ---
     [Header("Collision Settings")]
     [Tooltip("Tag của vũ khí/đạn của Player (VD: 'PlayerAttack')")]
     public string playerWeaponTag = "PlayerAttack"; 
@@ -68,9 +88,8 @@ public class BossHealth : MonoBehaviour
         damageFlash = GetComponentInChildren<DamageFlash>(); 
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponentInChildren<SpriteRenderer>();
-        healthUI = FindObjectOfType<BossHealthUI>(); // Or assigning in inspector
+        healthUI = FindObjectOfType<BossHealthUI>(); 
 
-        // Store original scale from the VISUALS child if possible, otherwise self
         if (sr != null) originalScale = sr.transform.localScale;
         else originalScale = transform.localScale;
     }
@@ -108,22 +127,14 @@ public class BossHealth : MonoBehaviour
         }
     }
 
-    // --- COLLISION DAMAGE (Auto-detect player attacks) ---
+    // --- COLLISION DAMAGE ---
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (isDead) return;
 
         if (collision.CompareTag(playerWeaponTag))
         {
-            float damageToTake = 10f; // Default damage
-            
-            // Try to get dynamic damage from the projectile/weapon
-            // Example: DamageDealer script on the attack object
-            /*
-            DamageDealer dealer = collision.GetComponent<DamageDealer>();
-            if (dealer != null) damageToTake = dealer.damage;
-            */
-
+            float damageToTake = 10f; 
             TakeDamage(damageToTake);
         }
     }
@@ -137,7 +148,7 @@ public class BossHealth : MonoBehaviour
         // 1. Disable Physics & Logic
         if (rb != null) rb.velocity = Vector2.zero;
         
-        // Disable AI Scripts (assuming they are MonoBehaviours on the same object)
+        // Disable AI Scripts
         MonoBehaviour[] scripts = GetComponents<MonoBehaviour>();
         foreach (MonoBehaviour s in scripts)
         {
@@ -148,29 +159,100 @@ public class BossHealth : MonoBehaviour
         StartCoroutine(DeathSequenceRoutine());
     }
 
+    // =========================================================
+    // PHẦN SỬA ĐỔI: TRÌNH TỰ CHẾT -> NỔ -> FADE -> OUTRO
+    // =========================================================
     private IEnumerator DeathSequenceRoutine()
     {
-        // 1. Big Hitstop
-        if (HitStopManager.Instance != null) HitStopManager.Instance.HitStop(deathHitstop);
+        // BƯỚC 1: Slow Motion & Animation Chết
+        Time.timeScale = 0.2f; 
 
-        // 2. Flash
+        Animator anim = GetComponentInChildren<Animator>();
+        if (anim != null) 
+        {
+            anim.SetTrigger("Death");
+        }
+        
+        // Nháy flash liên tục trong lúc giãy chết
         if (damageFlash != null) damageFlash.FlashIndefinitely();
 
-        // 3. Play Death Animation (optional, if you have Animator)
-        Animator anim = GetComponentInChildren<Animator>();
-        if (anim != null) anim.SetTrigger("Death");
+        // CHỜ ANIMATION: Dùng Realtime để chờ đúng số giây (deathDestroyDelay) bất chấp slow motion
+        // Đây là lúc Boss đang diễn hoạt cảnh ngã xuống
+        yield return new WaitForSecondsRealtime(deathDestroyDelay);
 
-        // 4. Wait for drama
-        yield return new WaitForSeconds(deathDestroyDelay);
+        // BƯỚC 2: ANIMATION XONG RỒI -> MỚI NỔ BÙM
+        Time.timeScale = 1f; // Trả lại tốc độ game bình thường
 
-        // 5. Explosion FX
-        if (deathParticlePrefab != null) Instantiate(deathParticlePrefab, transform.position, Quaternion.identity);
+        // Sinh hiệu ứng nổ
+        if (deathParticlePrefab != null) 
+        {
+            Instantiate(deathParticlePrefab, transform.position, Quaternion.identity);
+        }
 
-        // 6. Destroy
+        // Ẩn Boss đi (Chỉ tắt hình ảnh, không Destroy object vội)
+        if (sr != null) sr.enabled = false;
+        if (damageFlash != null) StopAllCoroutines(); // Tắt nháy
+
+        // Chờ một chút cho người chơi ngắm hiệu ứng nổ
+        yield return new WaitForSeconds(explosionDuration);
+
+        // BƯỚC 3: FADE MÀN HÌNH TRẮNG
+        yield return StartCoroutine(FadeScreenRoutine());
+
+        // BƯỚC 4: CHUYỂN CẢNH OUTRO
+        Debug.Log("Loading Outro: " + outroSceneName);
+        if (Application.CanStreamedLevelBeLoaded(outroSceneName))
+        {
+            SceneManager.LoadScene(outroSceneName);
+        }
+        else
+        {
+            Debug.LogError("❌ Scene '" + outroSceneName + "' chưa được thêm vào Build Settings!");
+        }
+        
+        // Hủy object Boss
         Destroy(gameObject); 
     }
 
-    // --- VISUAL EFFECTS (Squash & Stretch) ---
+    // --- HÀM MỚI: TỰ TẠO MÀN HÌNH FADE TRẮNG ---
+    private IEnumerator FadeScreenRoutine()
+    {
+        // Tạo Canvas tạm thời
+        GameObject canvasObj = new GameObject("TempFadeCanvas");
+        Canvas canvas = canvasObj.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 9999; // Đè lên tất cả
+        canvasObj.AddComponent<CanvasScaler>();
+        canvasObj.AddComponent<GraphicRaycaster>();
+
+        // Tạo tấm ảnh phủ kín màn hình
+        GameObject imageObj = new GameObject("FadeImage");
+        imageObj.transform.SetParent(canvasObj.transform, false);
+        Image fadeImage = imageObj.AddComponent<Image>();
+        fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, 0f); // Bắt đầu trong suốt
+        
+        // Stretch full màn hình
+        RectTransform rect = fadeImage.rectTransform;
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.sizeDelta = Vector2.zero;
+
+        // Bắt đầu Fade từ 0 -> 1
+        float timer = 0f;
+        while (timer < fadeDuration)
+        {
+            timer += Time.unscaledDeltaTime;
+            float alpha = Mathf.Clamp01(timer / fadeDuration);
+            fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, alpha);
+            yield return null;
+        }
+
+        // Giữ nguyên màu đặc một chút
+        fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, 1f);
+        yield return new WaitForSecondsRealtime(0.5f);
+    }
+
+    // --- VISUAL EFFECTS (Squash & Stretch) - GIỮ NGUYÊN ---
     private void ApplyMorphEffect()
     {
         if (morphCoroutine != null) StopCoroutine(morphCoroutine);
@@ -201,13 +283,12 @@ public class BossHealth : MonoBehaviour
     {
         if (damageTextPrefab != null)
         {
-            Vector3 spawnPos = transform.position + Vector3.up * 2f; // Higher popup for boss
+            Vector3 spawnPos = transform.position + Vector3.up * 2f; 
             spawnPos.z = -1f; 
             GameObject textInstance = Instantiate(damageTextPrefab, spawnPos, Quaternion.identity);
             
-            // Assuming DamagePopup script exists as per your Enemy_Health
             DamagePopup popupScript = textInstance.GetComponent<DamagePopup>();
-            if (popupScript != null) popupScript.Setup(amount, Color.red); // Boss hits usually red
+            if (popupScript != null) popupScript.Setup(amount, Color.red); 
         }
     }
 
