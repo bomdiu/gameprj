@@ -75,21 +75,36 @@ public class Fireball : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private void ApplyExplosionDamage(GameObject directHitTarget)
+   private void ApplyExplosionDamage(GameObject directHitTarget)
     {
-        if (directHitTarget != null && directHitTarget.CompareTag("Enemy"))
+        // --- 1. HANDLE DIRECT HIT ---
+        if (directHitTarget != null)
         {
+            // Try regular enemy
             directHitTarget.GetComponent<Enemy_Health>()?.TakeDamage(directHitDamage, DamageType.NormalAttack, true);
+            
+            // Try Boss [ADDED THIS]
+            directHitTarget.GetComponent<BossHealth>()?.TakeDamage(directHitDamage);
         }
 
+        // --- 2. HANDLE AREA OF EFFECT (AOE) ---
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(transform.position, explosionRadius, enemyLayer);
         foreach (Collider2D enemy in hitEnemies)
         {
+            // Skip the direct hit target so they don't take double damage
+            if (enemy.gameObject == directHitTarget) continue;
+
             float distance = Vector2.Distance(transform.position, enemy.transform.position);
             float damageMultiplier = 1f - Mathf.Clamp01(distance / explosionRadius);
             int finalDamage = Mathf.RoundToInt(maxExplosionDamage * damageMultiplier);
-            enemy.GetComponent<Enemy_Health>()?.TakeDamage(finalDamage, DamageType.NormalAttack, false);
 
+            // Try regular enemy damage
+            enemy.GetComponent<Enemy_Health>()?.TakeDamage(finalDamage, DamageType.NormalAttack, false);
+            
+            // Try Boss damage [ADDED THIS]
+            enemy.GetComponent<BossHealth>()?.TakeDamage(finalDamage);
+
+            // --- 3. KNOCKBACK ---
             Rigidbody2D rb = enemy.GetComponent<Rigidbody2D>();
             if (rb != null)
             {

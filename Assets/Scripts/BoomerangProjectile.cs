@@ -130,7 +130,7 @@ public class BoomerangChain : MonoBehaviour
         if (currentTarget == null) currentState = State.Returning;
     }
 
-    private void ProcessReach(Transform target)
+   private void ProcessReach(Transform target)
     {
         totalReachesPerformed++;
         lastHitTarget = target;
@@ -138,10 +138,19 @@ public class BoomerangChain : MonoBehaviour
         // If it's an enemy, deal damage
         if (target != playerTransform && !hasDamagedCurrentTarget)
         {
+            // 1. TRY REGULAR ENEMY
             Enemy_Health health = target.GetComponent<Enemy_Health>();
+            // 2. TRY BOSS [ADDED]
+            BossHealth bossHealth = target.GetComponent<BossHealth>();
+
             if (health != null)
             {
                 health.TakeDamage(damage, DamageType.NormalAttack, false);
+                hasDamagedCurrentTarget = true;
+            }
+            else if (bossHealth != null) // [ADDED BOSS LOGIC]
+            {
+                bossHealth.TakeDamage(damage);
                 hasDamagedCurrentTarget = true;
             }
             
