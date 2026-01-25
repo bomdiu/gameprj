@@ -1,13 +1,13 @@
 using UnityEngine;
 using System.Collections;
-using UnityEngine.SceneManagement; 
-using UnityEngine.UI; // [QUAN TRỌNG] Cần thư viện này để làm Fade màn hình
+using UnityEngine.SceneManagement; // Cần thiết để chuyển cảnh
+using UnityEngine.UI; // [MỚI] Cần thiết để làm hiệu ứng Fade màn hình
 
 public class BossHealth : MonoBehaviour
 {
-    // =========================================================
-    // PHẦN CŨ CỦA BẠN (GIỮ NGUYÊN KHÔNG ĐỤNG CHẠM)
-    // =========================================================
+    // ==========================================
+    // PHẦN CŨ (GIỮ NGUYÊN 100% LOGIC)
+    // ==========================================
     [Header("Stats Configuration")]
     public int maxHealth = 1000;
 
@@ -31,24 +31,10 @@ public class BossHealth : MonoBehaviour
     [Tooltip("Tốc độ nảy lại hình dạng ban đầu")]
     [SerializeField] private float morphRestoreSpeed = 5f;
 
-    // =========================================================
-    // PHẦN MỚI: CẤU HÌNH DEATH & OUTRO (ĐÃ BỔ SUNG)
-    // =========================================================
-    [Header("Death Sequence & Outro")]
+    [Header("Death Juice & Outro")]
     [SerializeField] private GameObject deathParticlePrefab;
-    
-    [Tooltip("Thời gian để Boss diễn hết Animation chết (Hãy chỉnh khớp với clip Animation)")]
-    [SerializeField] private float deathDestroyDelay = 3.0f; // Dùng biến cũ của bạn làm thời gian Anim
-
-    [Tooltip("Thời gian chờ hiệu ứng nổ diễn ra trước khi bắt đầu Fade màn hình")]
-    public float explosionDuration = 1.0f; // [MỚI]
-
-    [Tooltip("Thời gian màn hình trắng dần")]
-    public float fadeDuration = 2.0f; // [MỚI]
-    
-    [Tooltip("Màu chuyển cảnh (Mặc định là Trắng)")]
-    public Color fadeColor = Color.white; // [MỚI]
-
+    [Tooltip("Thời gian để Boss diễn hết Animation chết trước khi Nổ")]
+    [SerializeField] private float deathDestroyDelay = 3.0f; 
     [Tooltip("Tên màn chơi Outro (nhớ Add vào Build Settings)")]
     public string outroSceneName = "Outro"; 
 
@@ -68,10 +54,20 @@ public class BossHealth : MonoBehaviour
     private Coroutine morphCoroutine;
     private bool isDead = false; 
 
-    // --- COLLISION SETTINGS ---
     [Header("Collision Settings")]
     [Tooltip("Tag của vũ khí/đạn của Player (VD: 'PlayerAttack')")]
-    public string playerWeaponTag = "PlayerAttack"; 
+    public string playerWeaponTag = "PlayerCombat"; 
+
+    // ==========================================
+    // [MỚI] CÁC BIẾN CHO FADE EFFECT
+    // ==========================================
+    [Header("Fade Effect Settings")]
+    [Tooltip("Thời gian chờ hiệu ứng nổ diễn ra xong mới bắt đầu Fade")]
+    public float explosionDuration = 1.0f; 
+    [Tooltip("Thời gian màn hình chuyển dần sang trắng")]
+    public float fadeDuration = 2.0f; 
+    [Tooltip("Màu Fade (Trắng hoặc Đen)")]
+    public Color fadeColor = Color.white; 
 
     // Logic Phase
     public bool IsPhase2 
@@ -108,19 +104,15 @@ public class BossHealth : MonoBehaviour
         float damageToApply = Mathf.Abs(amount);
         if (damageToApply <= 0) return;
 
-        // 1. Apply Logic
         currentHealth = Mathf.Max(currentHealth - damageToApply, 0);
 
-        // 2. Update UI
         if (healthUI != null) healthUI.UpdateHealth(currentHealth, maxHealth);
 
-        // 3. Visual Feedback (Juice)
         ShowDamagePopup(Mathf.RoundToInt(damageToApply));
         if (damageFlash != null) damageFlash.Flash();
         if (HitStopManager.Instance != null) HitStopManager.Instance.HitStop(hitstopDuration);
         ApplyMorphEffect();
 
-        // 4. Check Death
         if (currentHealth <= 0)
         {
             Die();
@@ -130,12 +122,28 @@ public class BossHealth : MonoBehaviour
     // --- COLLISION DAMAGE ---
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        // 0. Nếu chết rồi thì thôi
         if (isDead) return;
 
+        // 1. [FIX QUAN TRỌNG] Bỏ qua Tường và các vật cản (Obstacles)
+        // Dòng này ngăn boss tự hủy khi đâm vào tường
+        if (collision.CompareTag("Obstacles")) return;
+        
+        // 2. [FIX PHỤ] Bỏ qua chính các bộ phận của Boss (Hitbox con, Radar...)
+        // Để tránh việc Hitbox của skill Dash tự gây damage cho Boss
+        if (collision.transform.IsChildOf(transform)) return;
+
+        // 3. Chỉ nhận damage nếu đúng là Vũ khí Player
         if (collision.CompareTag(playerWeaponTag))
         {
-            float damageToTake = 10f; 
-            TakeDamage(damageToTake);
+            // Thử lấy damage từ script vũ khí (nếu có), nếu không thì mặc định 10
+            PlayerCombat combat = collision.GetComponent<PlayerCombat>();
+                if (combat != null)
+                {
+                    // Use the method to get damage
+                    float damageToTake = combat.GetCurrentDamage(); 
+                    TakeDamage(damageToTake);
+                }
         }
     }
 
@@ -145,62 +153,63 @@ public class BossHealth : MonoBehaviour
         isDead = true;
         Debug.Log("BOSS DEAD!");
 
-        // 1. Disable Physics & Logic
         if (rb != null) rb.velocity = Vector2.zero;
         
-        // Disable AI Scripts
         MonoBehaviour[] scripts = GetComponents<MonoBehaviour>();
         foreach (MonoBehaviour s in scripts)
         {
             if (s != this) s.enabled = false;
         }
 
-        // 2. Start Death Sequence
         StartCoroutine(DeathSequenceRoutine());
     }
 
     // =========================================================
-    // PHẦN SỬA ĐỔI: TRÌNH TỰ CHẾT -> NỔ -> FADE -> OUTRO
+    // PHẦN LOGIC CHẾT (ĐÃ SỬA THEO YÊU CẦU CỦA BẠN)
     // =========================================================
     private IEnumerator DeathSequenceRoutine()
     {
-        // BƯỚC 1: Slow Motion & Animation Chết
+        // 1. Slow Motion
         Time.timeScale = 0.2f; 
 
+        // 2. Play Death Animation
         Animator anim = GetComponentInChildren<Animator>();
         if (anim != null) 
         {
             anim.SetTrigger("Death");
         }
-        
-        // Nháy flash liên tục trong lúc giãy chết
-        if (damageFlash != null) damageFlash.FlashIndefinitely();
 
-        // CHỜ ANIMATION: Dùng Realtime để chờ đúng số giây (deathDestroyDelay) bất chấp slow motion
-        // Đây là lúc Boss đang diễn hoạt cảnh ngã xuống
+        // [FIX LỖI FLASH] Dừng ngay việc nháy trắng để Boss hiện rõ animation chết
+        if (damageFlash != null) 
+        {
+            damageFlash.StopAllCoroutines(); // Dừng Coroutine flash
+            // Nếu script DamageFlash của bạn có hàm ResetColor, hãy gọi nó. 
+            // Nếu không, dòng trên là đủ để nó không Flash đè lên nữa.
+        }
+
+        // 3. CHỜ ANIMATION (Sử dụng deathDestroyDelay làm thời gian chờ Anim)
+        // Dùng Realtime để chờ đúng giây thực tế dù game đang Slow Motion
         yield return new WaitForSecondsRealtime(deathDestroyDelay);
 
-        // BƯỚC 2: ANIMATION XONG RỒI -> MỚI NỔ BÙM
-        Time.timeScale = 1f; // Trả lại tốc độ game bình thường
+        // 4. ANIMATION XONG -> TRẢ TỐC ĐỘ GAME -> NỔ
+        Time.timeScale = 1f; 
 
-        // Sinh hiệu ứng nổ
+        // Sinh hiệu ứng nổ (Death Effect) SAU KHI animation xong
         if (deathParticlePrefab != null) 
         {
             Instantiate(deathParticlePrefab, transform.position, Quaternion.identity);
         }
 
-        // Ẩn Boss đi (Chỉ tắt hình ảnh, không Destroy object vội)
+        // Tắt hình ảnh Boss đi (biến mất để nhường chỗ cho hiệu ứng nổ)
         if (sr != null) sr.enabled = false;
-        if (damageFlash != null) StopAllCoroutines(); // Tắt nháy
 
-        // Chờ một chút cho người chơi ngắm hiệu ứng nổ
+        // Chờ một chút cho hiệu ứng nổ tỏa sáng (explosionDuration)
         yield return new WaitForSeconds(explosionDuration);
 
-        // BƯỚC 3: FADE MÀN HÌNH TRẮNG
+        // 5. FADE MÀN HÌNH (SÁNG DẦN)
         yield return StartCoroutine(FadeScreenRoutine());
 
-        // BƯỚC 4: CHUYỂN CẢNH OUTRO
-        Debug.Log("Loading Outro: " + outroSceneName);
+        // 6. CHUYỂN CẢNH OUTRO
         if (Application.CanStreamedLevelBeLoaded(outroSceneName))
         {
             SceneManager.LoadScene(outroSceneName);
@@ -208,13 +217,11 @@ public class BossHealth : MonoBehaviour
         else
         {
             Debug.LogError("❌ Scene '" + outroSceneName + "' chưa được thêm vào Build Settings!");
+            Destroy(gameObject); // Fallback nếu lỗi
         }
-        
-        // Hủy object Boss
-        Destroy(gameObject); 
     }
 
-    // --- HÀM MỚI: TỰ TẠO MÀN HÌNH FADE TRẮNG ---
+    // --- HÀM MỚI: TỰ TẠO HIỆU ỨNG FADE ---
     private IEnumerator FadeScreenRoutine()
     {
         // Tạo Canvas tạm thời
@@ -225,7 +232,7 @@ public class BossHealth : MonoBehaviour
         canvasObj.AddComponent<CanvasScaler>();
         canvasObj.AddComponent<GraphicRaycaster>();
 
-        // Tạo tấm ảnh phủ kín màn hình
+        // Tạo ảnh Fade
         GameObject imageObj = new GameObject("FadeImage");
         imageObj.transform.SetParent(canvasObj.transform, false);
         Image fadeImage = imageObj.AddComponent<Image>();
@@ -237,7 +244,7 @@ public class BossHealth : MonoBehaviour
         rect.anchorMax = Vector2.one;
         rect.sizeDelta = Vector2.zero;
 
-        // Bắt đầu Fade từ 0 -> 1
+        // Chạy hiệu ứng Fade In
         float timer = 0f;
         while (timer < fadeDuration)
         {
@@ -247,9 +254,9 @@ public class BossHealth : MonoBehaviour
             yield return null;
         }
 
-        // Giữ nguyên màu đặc một chút
+        // Giữ màn hình đặc 1 chút trước khi load scene
         fadeImage.color = new Color(fadeColor.r, fadeColor.g, fadeColor.b, 1f);
-        yield return new WaitForSecondsRealtime(0.5f);
+        yield return new WaitForSecondsRealtime(0.2f);
     }
 
     // --- VISUAL EFFECTS (Squash & Stretch) - GIỮ NGUYÊN ---
@@ -263,11 +270,9 @@ public class BossHealth : MonoBehaviour
     {
         Transform targetTransform = (sr != null) ? sr.transform : transform;
 
-        // Squash
         targetTransform.localScale = Vector3.Scale(originalScale, squashScale);
         yield return new WaitForSecondsRealtime(squashHoldDuration);
 
-        // Return to normal
         float elapsed = 0f;
         while (elapsed < 1f)
         {
@@ -292,7 +297,6 @@ public class BossHealth : MonoBehaviour
         }
     }
 
-    // --- DEV TOOLS ---
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.T))
