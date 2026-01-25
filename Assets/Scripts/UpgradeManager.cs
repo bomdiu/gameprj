@@ -43,22 +43,22 @@ public class UpgradeManager : MonoBehaviour
 
     [Header("Data")]
     public List<SkillData> allSkills; 
-private void Update()
-{
-    // --- DEBUG TRIGGER ---
-    // Press 'M' to open the upgrade panel for testing
-    if (Input.GetKeyDown(KeyCode.M))
+
+    private void Update()
     {
-        if (upgradePanel != null && !upgradePanel.activeSelf)
+        // --- DEBUG TRIGGER ---
+        if (Input.GetKeyDown(KeyCode.M))
         {
-            Debug.Log("<color=cyan>Debug: Opening Upgrade Panel</color>");
-            ShowUpgradeOptions();
+            if (upgradePanel != null && !upgradePanel.activeSelf)
+            {
+                Debug.Log("<color=cyan>Debug: Opening Upgrade Panel</color>");
+                ShowUpgradeOptions();
+            }
         }
     }
-}
+
     private void Awake()
     {
-        // Improved Singleton Pattern
         if (Instance == null)
         {
             Instance = this;
@@ -83,86 +83,74 @@ private void Update()
         StartCoroutine(WaveEndRoutine()); 
     }
 
- private IEnumerator WaveEndRoutine()
-{
-    // Ensure game is running for the particle simulation
-    Time.timeScale = 1f; 
-
-    // Access Modules
-    var velocityModule = fireflySystem.velocityOverLifetime;
-    var emissionModule = fireflySystem.emission;
-    var colorModule = fireflySystem.colorOverLifetime; 
-    var mainModule = fireflySystem.main;
-    
-    // 1. PREPARE FOR SUCK: Turn off new spawns so we only focus on existing ones
-    emissionModule.enabled = false; 
-    velocityModule.enabled = true; 
-    velocityModule.space = ParticleSystemSimulationSpace.World; 
-    colorModule.enabled = true; 
-
-    float elapsed = 0f; 
-    while (elapsed < transitionDelay) 
+    private IEnumerator WaveEndRoutine()
     {
-        float normalizedTime = elapsed / transitionDelay;
+        Time.timeScale = 1f; 
+
+        var velocityModule = fireflySystem.velocityOverLifetime;
+        var emissionModule = fireflySystem.emission;
+        var colorModule = fireflySystem.colorOverLifetime; 
+        var mainModule = fireflySystem.main;
         
-        if (playerTransform != null)
+        emissionModule.enabled = false; 
+        velocityModule.enabled = true; 
+        velocityModule.space = ParticleSystemSimulationSpace.World; 
+        colorModule.enabled = true; 
+
+        float elapsed = 0f; 
+        while (elapsed < transitionDelay) 
         {
-            // Keep the system centered on the player during the suck
-            fireflySystem.transform.position = playerTransform.position;
+            float normalizedTime = elapsed / transitionDelay;
             
-            // INCREASE PULL OVER TIME: Starts at 0, ramps up to vortex strength
-            velocityModule.radial = Mathf.Lerp(0, vortexPullStrength, normalizedTime * 2f);
-
-            // Glow logic
-            if (playerGlowLight != null)
+            if (playerTransform != null)
             {
-                playerGlowLight.intensity = normalizedTime * maxGlowIntensity;
-                playerGlowLight.pointLightOuterRadius = normalizedTime * maxOuterRadius;
-            }
+                fireflySystem.transform.position = playerTransform.position;
+                velocityModule.radial = Mathf.Lerp(0, vortexPullStrength, normalizedTime * 2f);
 
-            // Fade logic
-            if (normalizedTime >= fadeStartPercentage)
-            {
-                float fadeAlpha = Mathf.Lerp(1f, 0f, (normalizedTime - fadeStartPercentage) / (1f - fadeStartPercentage));
-                Gradient grad = new Gradient();
-                grad.SetKeys(
-                    new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
-                    new GradientAlphaKey[] { new GradientAlphaKey(fadeAlpha, 0f), new GradientAlphaKey(fadeAlpha, 1f) }
-                );
-                colorModule.color = grad;
+                if (playerGlowLight != null)
+                {
+                    playerGlowLight.intensity = normalizedTime * maxGlowIntensity;
+                    playerGlowLight.pointLightOuterRadius = normalizedTime * maxOuterRadius;
+                }
+
+                if (normalizedTime >= fadeStartPercentage)
+                {
+                    float fadeAlpha = Mathf.Lerp(1f, 0f, (normalizedTime - fadeStartPercentage) / (1f - fadeStartPercentage));
+                    Gradient grad = new Gradient();
+                    grad.SetKeys(
+                        new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                        new GradientAlphaKey[] { new GradientAlphaKey(fadeAlpha, 0f), new GradientAlphaKey(fadeAlpha, 1f) }
+                    );
+                    colorModule.color = grad;
+                }
             }
+            elapsed += Time.unscaledDeltaTime; 
+            yield return null; 
         }
-        elapsed += Time.unscaledDeltaTime; 
-        yield return null; 
+
+        fireflySystem.Clear(); 
+        velocityModule.radial = 0f; 
+        velocityModule.enabled = false;
+
+        Gradient resetGrad = new Gradient();
+        resetGrad.SetKeys(
+            new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+            new GradientAlphaKey[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) }
+        );
+        colorModule.color = resetGrad;
+        colorModule.enabled = false; 
+
+        emissionModule.enabled = true; 
+
+        if (playerGlowLight != null)
+        {
+            playerGlowLight.intensity = maxGlowIntensity;
+            playerGlowLight.pointLightOuterRadius = maxOuterRadius;
+        }
+
+        ShowUpgradeOptions(); 
+        StartCoroutine(FadeOutGlowLight());
     }
-
-    // 3. RESET TO START-OF-GAME STATE
-    // Force the radial velocity back to exactly 0
-    velocityModule.radial = 0f; 
-    velocityModule.enabled = false;
-
-    // Restore full opacity (Alpha 1) so they aren't born transparent
-    Gradient resetGrad = new Gradient();
-    resetGrad.SetKeys(
-        new GradientColorKey[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
-        new GradientAlphaKey[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) }
-    );
-    colorModule.color = resetGrad;
-    colorModule.enabled = false; 
-
-    // Re-enable spawning for the new wave
-    emissionModule.enabled = true; 
-
-
-    if (playerGlowLight != null)
-    {
-        playerGlowLight.intensity = maxGlowIntensity;
-        playerGlowLight.pointLightOuterRadius = maxOuterRadius;
-    }
-
-    ShowUpgradeOptions(); 
-    StartCoroutine(FadeOutGlowLight());
-}
 
     private IEnumerator FadeOutGlowLight()
     {
@@ -181,17 +169,14 @@ private void Update()
     
     public void ShowUpgradeOptions()
     {
-        // Pause game and activate UI
         Time.timeScale = 0; 
         upgradePanel.SetActive(true);
 
-        // 1. CLEAR: Ensures no old cards remain
         foreach (Transform child in cardsContainer)
         {
             Destroy(child.gameObject);
         }
 
-        // 2. SPAWN: Correct single-loop spawning
         List<SkillData> randomSkills = GetRandomSkills(3);
         foreach (SkillData skill in randomSkills)
         {
@@ -215,7 +200,7 @@ private void Update()
         {
             timer += Time.unscaledDeltaTime; 
             float progress = timer / animationDuration;
-            float easedProgress = 1f - Mathf.Pow(1f - progress, 3); // Cubic ease-out
+            float easedProgress = 1f - Mathf.Pow(1f - progress, 3); 
             if (panelCanvasGroup != null) panelCanvasGroup.alpha = easedProgress;
             cardsContainer.localScale = Vector3.Lerp(startScale, targetScale, easedProgress);
             yield return null;
@@ -227,7 +212,28 @@ private void Update()
 
     public void SelectUpgrade(SkillData skill, Transform selectedCardTransform)
     {
-        // Apply skill effects based on type
+        // 1. Apply to the current player in the scene
+        ApplySkillToCurrentPlayer(skill);
+
+        // 2. NEW: Sync with StatsManager so it persists across scenes
+        if (StatsManager.Instance != null)
+        {
+            StatsManager.Instance.UpdatePersistentStats(skill);
+        }
+
+        if (selectionBurstPrefab != null)
+        {
+            ParticleSystem burst = Instantiate(selectionBurstPrefab, selectedCardTransform.position, Quaternion.identity);
+            var main = burst.main;
+            main.useUnscaledTime = true; 
+            burst.Play();
+            Destroy(burst.gameObject, 2f); 
+        }
+        StartCoroutine(DelayedClose()); 
+    }
+
+    private void ApplySkillToCurrentPlayer(SkillData skill)
+    {
         switch (skill.upgradeType)
         {
             case SkillData.SkillType.HealthUp:
@@ -249,17 +255,6 @@ private void Update()
             case SkillData.SkillType.CritChance:
                 playerCombat.critChance += skill.valueAmount; break;
         }
-
-        // Visual feedback on selection
-        if (selectionBurstPrefab != null)
-        {
-            ParticleSystem burst = Instantiate(selectionBurstPrefab, selectedCardTransform.position, Quaternion.identity);
-            var main = burst.main;
-            main.useUnscaledTime = true; // Essential for paused state
-            burst.Play();
-            Destroy(burst.gameObject, 2f); 
-        }
-        StartCoroutine(DelayedClose()); 
     }
 
     private IEnumerator DelayedClose()
@@ -277,8 +272,6 @@ private void Update()
     List<SkillData> GetRandomSkills(int count)
     {
         List<SkillData> filteredPool = new List<SkillData>();
-        
-        // Filter based on Map Index
         foreach(var s in allSkills)
         {
             if (currentMapIndex == 1 && s.upgradeType == SkillData.SkillType.SkillDamage) continue;
@@ -289,11 +282,8 @@ private void Update()
         for (int i = 0; i < count; i++)
         {
             if (filteredPool.Count == 0) break;
-            
-            // 80% Common, 20% Rare
             SkillData.Rarity targetRarity = (Random.value < 0.2f) ? SkillData.Rarity.Rare : SkillData.Rarity.Common;
             List<SkillData> rarityMatch = filteredPool.FindAll(s => s.skillRarity == targetRarity);
-            
             SkillData selectedSkill = (rarityMatch.Count > 0) ? rarityMatch[Random.Range(0, rarityMatch.Count)] : filteredPool[0];
 
             if (selectedSkill != null)

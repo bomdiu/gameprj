@@ -11,7 +11,7 @@ public class Skill2 : MonoBehaviour
     public float totalCastTime = 0.5f;
 
     [Header("Cast Effects")]
-    public ParticleSystem gatheringParticles; // NEW: Assign your particle prefab here
+    public ParticleSystem gatheringParticles; 
     public Vector3 handOffset = new Vector3(0.5f, 0.2f, 0f); 
 
     [Header("Chain Stats")]
@@ -43,6 +43,9 @@ public class Skill2 : MonoBehaviour
 
     void Update()
     {
+        // Unlock Check: Skill 2 unlocks after Samplescene 1
+        if (SkillUnlockManager.Instance != null && !SkillUnlockManager.Instance.skill2Unlocked) return;
+
         if (Input.GetKeyDown(KeyCode.Q) && Time.time >= nextFireTime && !isCasting)
         {
             if (energy != null && energy.UseEnergy(energyCost)) StartCoroutine(CastRoutine());
@@ -58,7 +61,6 @@ public class Skill2 : MonoBehaviour
 
         FaceMouseCorrectly(); 
 
-        // 1. PLAY GATHERING PARTICLES DURING CAST
         if (gatheringParticles != null)
         {
             gatheringParticles.transform.position = GetHandWorldPosition();
@@ -69,7 +71,6 @@ public class Skill2 : MonoBehaviour
 
         yield return new WaitForSeconds(releaseDelay);
         
-        // 2. STOP PARTICLES ON RELEASE
         if (gatheringParticles != null) gatheringParticles.Stop();
 
         ThrowChainBoomerang();
@@ -94,12 +95,10 @@ public class Skill2 : MonoBehaviour
         }
     }
 
-    // Helper to match the hand position with your flip logic
     private Vector3 GetHandWorldPosition()
     {
         if (visualsTransform == null) return transform.position;
         Vector3 offset = handOffset;
-        // Logic: Right = -1, Left = 1
         offset.x *= -visualsTransform.localScale.x; 
         return transform.position + offset;
     }

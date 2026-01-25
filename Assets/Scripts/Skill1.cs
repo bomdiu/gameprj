@@ -12,7 +12,7 @@ public class Skill1 : MonoBehaviour
 
     [Header("Fire Build-Up Settings")]
     public GameObject fireBuildUpPrefab;
-    public ParticleSystem gatheringParticles; // NEW: Assign your particle prefab here
+    public ParticleSystem gatheringParticles; 
     public Vector3 handOffset = new Vector3(0.5f, 0.2f, 0f); 
     private GameObject activeBuildUp;
 
@@ -46,7 +46,11 @@ public class Skill1 : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F) && Time.time >= nextFireTime && !isCasting)
+        // Check if the skill is unlocked (Samplescene 2 completion)
+        if (SkillUnlockManager.Instance != null && !SkillUnlockManager.Instance.skill1Unlocked) return;
+
+        // CHANGED: KeyCode changed to E
+        if (Input.GetKeyDown(KeyCode.E) && Time.time >= nextFireTime && !isCasting)
         {
             if (combat != null && combat.isAttacking) return;
             if (combat != null && (Time.time - combat.lastAttackEndTime < postAttackDelay)) return;

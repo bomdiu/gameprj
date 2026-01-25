@@ -50,6 +50,14 @@ public class PlayerMovement : MonoBehaviour
         if (anim == null) anim = GetComponentInChildren<Animator>();
         if (visualsTransform == null && anim != null) visualsTransform = anim.transform;
         if (visualsTransform != null) playerSR = visualsTransform.GetComponent<SpriteRenderer>();
+
+        // --- STATS PERSISTENCE HANDSHAKE ---
+        if (StatsManager.Instance != null)
+        {
+            PlayerHealth health = GetComponent<PlayerHealth>();
+            PlayerCombat combat = GetComponent<PlayerCombat>();
+            StatsManager.Instance.ApplyStatsToPlayer(this, health, combat);
+        }
     }
 
     void Update()

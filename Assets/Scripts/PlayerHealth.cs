@@ -17,12 +17,18 @@ public class PlayerHealth : MonoBehaviour
     void Start()
     {
         currentHealth = maxHealth; 
+        SyncHealthUI(); // INITIAL SYNC
+        StartCoroutine(RegenRoutine()); 
+    }
+
+    // NEW: Call this to force the UI to match current script variables
+    public void SyncHealthUI()
+    {
         if (healthBarUI != null)
         {
             healthBarUI.SetMaxHealth(maxHealth);
             healthBarUI.SetHealth(currentHealth);
         }
-        StartCoroutine(RegenRoutine()); 
     }
 
     private IEnumerator RegenRoutine()
@@ -37,7 +43,7 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-  public void Heal(int amount)
+    public void Heal(int amount)
     {
         if (isDead) return;
         currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
@@ -76,11 +82,7 @@ public class PlayerHealth : MonoBehaviour
     {
         maxHealth += amount;
         currentHealth += amount;
-        if (healthBarUI != null)
-        {
-            healthBarUI.SetMaxHealth(maxHealth);
-            healthBarUI.SetHealth(currentHealth);
-        }
+        SyncHealthUI(); // REFRESH UI
     }
 
     public void ChangeHealth(int amount)
@@ -94,20 +96,24 @@ public class PlayerHealth : MonoBehaviour
         if (currentHealth <= 0) Die();
     }
 
-    void Die()
+   void Die()
     {
         if (isDead) return;
         isDead = true;
         
+        // --- NEW: Reset persistent stats so the next run is fresh ---
+        if (StatsManager.Instance != null)
+        {
+            StatsManager.Instance.ResetStats();
+        }
+
         // 1. SEND SIGNAL IMMEDIATELY
-        // This must happen BEFORE hiding visuals or disabling scripts.
         if (GameOverManager.Instance != null)
         {
             GameOverManager.Instance.TriggerDeath(transform);
         }
         else
         {
-            // If you see this, the GameOverManager is NOT in your Hierarchy!
             Debug.LogError("CRITICAL: GameOverManager Instance is null in Die()");
         }
 

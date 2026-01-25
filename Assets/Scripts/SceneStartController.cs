@@ -3,34 +3,47 @@ using System.Collections;
 
 public class SceneStartDelay : MonoBehaviour
 {
-    public float startDelay = 3f;
+    [Header("Timing")]
+    [Tooltip("Match this to your SceneTransitionManager fade duration (usually 1.0)")]
+    public float startDelay = 1.1f; 
 
     private void Awake()
     {
-        // Disable all instances of the AI and Player scripts at the very start
+        // Shut everything down the moment the scene wakes up
         SetGameplayActive(false);
     }
 
     private IEnumerator Start()
     {
-        // Optional: Trigger a "3-2-1 GO" UI here if you have one
-        Debug.Log("Game starting in " + startDelay + " seconds...");
-        
+        // Wait for the transition fade to finish
         yield return new WaitForSeconds(startDelay);
-
-        Debug.Log("GO!");
+        
+        // Wake the game up
         SetGameplayActive(true);
+        Debug.Log("Gameplay Activated");
     }
 
     private void SetGameplayActive(bool isActive)
     {
-        // Disable/Enable the Charge AI
-        ChargeEnemyAI[] enemies = FindObjectsByType<ChargeEnemyAI>(FindObjectsSortMode.None);
+        // 1. Toggle all Enemies
+        ChargeEnemyAI[] enemies = Object.FindObjectsByType<ChargeEnemyAI>(FindObjectsSortMode.None);
         foreach (var enemy in enemies) enemy.enabled = isActive;
 
-        // Disable/Enable the Player (assuming you have a script named PlayerController)
-        // Change "PlayerController" to whatever your movement script is named
-        MonoBehaviour player = GameObject.FindGameObjectWithTag("Player")?.GetComponent<MonoBehaviour>();
-        if (player != null) player.enabled = isActive;
+        // 2. Toggle the Player Components
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            // Toggle Movement
+            if (player.TryGetComponent(out PlayerMovement move)) 
+                move.enabled = isActive;
+
+            // Toggle Combat (Matches your Player_Combat name)
+            if (player.TryGetComponent(out PlayerCombat combat)) 
+                combat.enabled = isActive;
+
+            // Toggle Skills (Optional but recommended)
+            if (player.TryGetComponent(out Skill1 s1)) s1.enabled = isActive;
+            if (player.TryGetComponent(out Skill2 s2)) s2.enabled = isActive;
+        }
     }
 }

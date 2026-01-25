@@ -40,7 +40,7 @@ public class WaveManager : MonoBehaviour
     public float maxSuctionStrength = 25f;  
     public float suctionAcceleration = 2.0f; 
     public float absorptionDistance = 0.5f; 
-    public ParticleSystem fireflySystem;   
+    public ParticleSystem fireflySystem; // Drag your particle system here!
 
     [Header("Transition Settings")]
     public string nextSceneName; 
@@ -75,31 +75,97 @@ public class WaveManager : MonoBehaviour
 
     private IEnumerator StartWaveSystem()
     {
+        // Initial delay before first wave
         yield return new WaitForSeconds(3.0f);
+
         while (currentWaveIndex < waves.Count)
         {
             foreach(var config in waves[currentWaveIndex].enemyConfigs) config.currentSpawnedCount = 0;
-            yield return StartCoroutine(SpawnWave(waves[currentWaveIndex]));
-            while (enemiesAlive > 0) yield return new WaitForSeconds(0.5f);
 
+            // 1. SPAWN THE WAVE
+            yield return StartCoroutine(SpawnWave(waves[currentWaveIndex]));
+
+            // 2. WAIT BUFFER (Prevents skipping to upgrade before enemies exist)
+            yield return new WaitForSeconds(1.0f);
+
+            // 3. THE WAIT GATE: Strictly wait until all enemies are gone
+            while (enemiesAlive > 0 || GameObject.FindGameObjectWithTag("Enemy") != null) 
+            {
+                // Safety: If scene is empty but counter is stuck, force zero
+                if (enemiesAlive > 0 && GameObject.FindGameObjectWithTag("Enemy") == null)
+                {
+                    enemiesAlive = 0;
+                }
+                yield return new WaitForSeconds(0.2f);
+            }
+
+            // 4. WAVE IS DEFINITIVELY CLEARED - Now give the upgrade
             if (UpgradeManager.Instance != null)
             {
                 UpgradeManager.Instance.StartWaveEndTransition();
-                yield return new WaitForSecondsRealtime(0.1f);
-                while (UpgradeManager.Instance.upgradePanel.activeSelf) yield return null; 
+                yield return new WaitForSecondsRealtime(0.5f); 
+
+                while (UpgradeManager.Instance.upgradePanel.activeSelf) 
+                {
+                    yield return null; 
+                }
             }
 
+            // 5. CHECK FOR MAP END
             if (currentWaveIndex == waves.Count - 1)
             {
+                if (SkillUnlockManager.Instance != null)
+                {
+                    SkillUnlockManager.Instance.CheckLevelCompletion();
+                }
+
                 SpawnPortal(); 
                 yield break; 
             }
 
+            // 6. PRE-WAVE DELAY
             yield return new WaitForSeconds(2.0f); 
             currentWaveIndex++;
             yield return new WaitForSeconds(timeBetweenWaves); 
         }
     }
+
+    private IEnumerator SpawnWave(WaveData wave)
+    {
+        for (int i = 0; i < wave.totalEnemyCount; i++)
+        {
+            SpawnEnemy(wave);
+            yield return new WaitForSeconds(wave.timeBetweenSpawns);
+        }
+    }
+
+    private void SpawnEnemy(WaveData wave)
+    {
+        List<EnemyTypeConfig> validEnemies = new List<EnemyTypeConfig>();
+        foreach (var config in wave.enemyConfigs)
+            if (config.currentSpawnedCount < config.maxAmountInWave) validEnemies.Add(config);
+        
+        if (validEnemies.Count == 0) return;
+        
+        EnemyTypeConfig selected = validEnemies[Random.Range(0, validEnemies.Count)];
+        selected.currentSpawnedCount++;
+        Vector2 spawnPos = GetRandomSpawnPosition();
+        StartCoroutine(ExecuteSpawn(spawnPos, selected.prefab));
+    }
+
+    private IEnumerator ExecuteSpawn(Vector2 position, GameObject enemyPrefab)
+    {
+        enemiesAlive++;
+        if (spawnEffectPrefab != null)
+        {
+            GameObject effect = Instantiate(spawnEffectPrefab, position, Quaternion.identity);
+            Destroy(effect, effectDuration + 0.5f);
+        }
+        yield return new WaitForSeconds(effectDuration);
+        Instantiate(enemyPrefab, position, Quaternion.identity);
+    }
+
+    public void OnEnemyKilled() => enemiesAlive--;
 
     private void SpawnPortal()
     {
@@ -141,7 +207,6 @@ public class WaveManager : MonoBehaviour
         bool playerAbsorbed = false;
         float currentStrength = baseSuctionStrength;
 
-        // PHYSICS GHOSTING
         if (player != null)
         {
             Collider2D col = player.GetComponent<Collider2D>();
@@ -169,6 +234,7 @@ public class WaveManager : MonoBehaviour
                 }
             }
 
+            // PARTICLE SUCTION LOGIC
             if (fireflySystem != null)
             {
                 var vel = fireflySystem.velocityOverLifetime;
@@ -182,21 +248,12 @@ public class WaveManager : MonoBehaviour
             yield return null;
         }
 
-        // --- HAND OFF TO TRANSITION MANAGER ---
         yield return new WaitForSeconds(delayBeforeLoad);
 
-        if (SceneTransitionManager.Instance != null)
-        {
-            SceneTransitionManager.Instance.ToBlack(nextSceneName);
-        }
-        else
-        {
-            // Fallback if you forget to put the manager in the scene
-            SceneManager.LoadScene(nextSceneName);
-        }
+        if (SceneTransitionManager.Instance != null) SceneTransitionManager.Instance.ToBlack(nextSceneName);
+        else SceneManager.LoadScene(nextSceneName);
     }
 
-    // [All other helper methods: GetPortalSpawnPosition, SpawnWave, etc. stay exactly the same]
     private Vector3 GetPortalSpawnPosition()
     {
         if (portalSpawnPoint != null) return portalSpawnPoint.position;
@@ -214,27 +271,6 @@ public class WaveManager : MonoBehaviour
         return Vector3.zero;
     }
 
-    private IEnumerator SpawnWave(WaveData wave)
-    {
-        for (int i = 0; i < wave.totalEnemyCount; i++)
-        {
-            SpawnEnemy(wave);
-            yield return new WaitForSeconds(wave.timeBetweenSpawns);
-        }
-    }
-
-    private void SpawnEnemy(WaveData wave)
-    {
-        List<EnemyTypeConfig> validEnemies = new List<EnemyTypeConfig>();
-        foreach (var config in wave.enemyConfigs)
-            if (config.currentSpawnedCount < config.maxAmountInWave) validEnemies.Add(config);
-        if (validEnemies.Count == 0) return;
-        EnemyTypeConfig selected = validEnemies[Random.Range(0, validEnemies.Count)];
-        selected.currentSpawnedCount++;
-        Vector2 spawnPos = GetRandomSpawnPosition();
-        StartCoroutine(ExecuteSpawn(spawnPos, selected.prefab));
-    }
-
     private Vector2 GetRandomSpawnPosition()
     {
         Vector3 mapCenter = Vector3.zero; 
@@ -246,31 +282,5 @@ public class WaveManager : MonoBehaviour
             if (!Physics2D.OverlapCircle(testPos, 0.4f, obstacleLayer)) return testPos;
         }
         return (Vector2)Random.insideUnitCircle.normalized * spawnRadius;
-    }
-
-    private IEnumerator ExecuteSpawn(Vector2 position, GameObject enemyPrefab)
-    {
-        enemiesAlive++;
-        if (spawnEffectPrefab != null)
-        {
-            GameObject effect = Instantiate(spawnEffectPrefab, position, Quaternion.identity);
-            Destroy(effect, effectDuration + 0.5f);
-        }
-        yield return new WaitForSeconds(effectDuration);
-        Instantiate(enemyPrefab, position, Quaternion.identity);
-    }
-
-    public void OnEnemyKilled() => enemiesAlive--;
-
-    private void OnDrawGizmos()
-    {
-        Vector3 mapCenter = Vector3.zero; 
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(mapCenter, spawnRadius);
-        if (portalSpawnPoint != null)
-        {
-            Gizmos.color = Color.magenta;
-            Gizmos.DrawWireSphere(portalSpawnPoint.position, suctionRadius);
-        }
     }
 }
