@@ -8,6 +8,10 @@ public class Skill_BiteDash : MonoBehaviour
     public BossController boss;
     public BossSkillData skillData;
 
+    [Header("Âm thanh & Hiệu ứng")] // [MỚI]
+    public AudioClip biteSFX;       // Kéo file âm thanh tiếng cắn/lao tới vào đây
+    private AudioSource audioSource;
+
     [Header("Cấu hình Va chạm")]
     // Kéo Collider chính của Boss (cái nằm trên người Boss để nhận damage/va chạm tường) vào đây
     public Collider2D bossMainCollider; 
@@ -27,6 +31,10 @@ public class Skill_BiteDash : MonoBehaviour
     {
         CreateLineRenderer();
         CreateHitbox();
+
+        // [MỚI] Setup Audio Source
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
 
         // Tự động tìm Collider trên người boss nếu quên kéo
         if (bossMainCollider == null)
@@ -68,6 +76,12 @@ public class Skill_BiteDash : MonoBehaviour
         SyncHitboxToTelegraph(lockedDirection); 
         hitboxObj.SetActive(true); 
 
+        // [MỚI] PHÁT ÂM THANH CẮN
+        if (biteSFX != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(biteSFX);
+        }
+
         boss.PlayAnim("biteAttack");
         boss.rb.velocity = lockedDirection * skillData.dashSpeed; 
 
@@ -89,27 +103,22 @@ public class Skill_BiteDash : MonoBehaviour
         currentCooldown = skillData.autoCooldown;
     }
 
-    // --- HÀM XỬ LÝ ĐI XUYÊN QUÁI (MỚI) ---
+    // --- HÀM XỬ LÝ ĐI XUYÊN QUÁI ---
     void IgnoreMinionCollision(bool ignore)
     {
         if (ignore)
         {
-            // BƯỚC 1: Tìm tất cả collider xung quanh boss (bán kính quét rộng 1 chút, ví dụ 20 đơn vị)
-            // Dùng LayerMask để chỉ quét layer Enemy cho nhẹ máy
+            // BƯỚC 1: Tìm tất cả collider xung quanh boss
             int enemyLayerMask = 1 << LayerMask.NameToLayer("Enemy");
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 20f, enemyLayerMask);
 
-            ignoredMinions.Clear(); // Xóa danh sách cũ
+            ignoredMinions.Clear(); 
 
             foreach (var col in hits)
             {
-                // Chỉ tắt va chạm nếu đó KHÔNG PHẢI là boss (vì boss cũng là layer Enemy)
                 if (col != bossMainCollider && !col.isTrigger) 
                 {
-                    // Tắt va chạm giữa Boss và con Minion này
                     Physics2D.IgnoreCollision(bossMainCollider, col, true);
-                    
-                    // Lưu vào danh sách để tí nữa bật lại
                     ignoredMinions.Add(col);
                 }
             }
@@ -119,7 +128,6 @@ public class Skill_BiteDash : MonoBehaviour
             // BƯỚC 2: Bật lại va chạm cho những con đã lưu
             foreach (var col in ignoredMinions)
             {
-                // Kiểm tra null (đề phòng con minion bị chết/destroy trong lúc boss đang dash)
                 if (col != null)
                 {
                     Physics2D.IgnoreCollision(bossMainCollider, col, false);
@@ -159,17 +167,15 @@ public class Skill_BiteDash : MonoBehaviour
         hitboxObj.SetActive(false); 
     }
 
-    // --- NEW: DAMAGE LOGIC HERE ---
+    // --- DAMAGE LOGIC ---
     public void OnHitPlayer(GameObject playerObj) {
-        // Find the PlayerStats component on the player object and apply damage
         PlayerStats stats = playerObj.GetComponent<PlayerStats>();
         if (stats != null)
         {
             stats.TakeDamage(skillData.damage);
-            // Optional: Apply knockback or other effects here if needed
         }
     }
-    // ------------------------------
+    // --------------------
 
     void SyncHitboxToTelegraph(Vector2 direction) {
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;

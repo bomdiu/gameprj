@@ -6,13 +6,26 @@ public class UpgradeCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExi
     [SerializeField] private float hoverScale = 1.1f;
     [SerializeField] private float animationSpeed = 10f;
     
+    [Header("Audio Settings")] // MỚI: Thêm âm thanh cho UI
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip hoverSFX;
+    [SerializeField] private AudioClip clickSFX;
+
     private Vector3 originalScale = Vector3.one;
     private Vector3 targetScale = Vector3.one;
 
-    // Added the missing variable to store the skill reference
     private SkillData thisSkillData;
 
-    // Added a method to receive the data from your SkillCardUI script
+    private void Awake()
+    {
+        // Tự động tìm AudioSource nếu chưa gán
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+        
+        // Đảm bảo card bắt đầu từ scale hiện tại
+        originalScale = transform.localScale;
+        targetScale = originalScale;
+    }
+
     public void SetData(SkillData data)
     {
         thisSkillData = data;
@@ -20,13 +33,19 @@ public class UpgradeCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     private void Update()
     {
-        // Use unscaledDeltaTime because game is paused
+        // Sử dụng unscaledDeltaTime vì menu nâng cấp thường làm game tạm dừng
         transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.unscaledDeltaTime * animationSpeed);
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
         targetScale = originalScale * hoverScale;
+
+        // MỚI: Phát tiếng "pặc" khi hover
+        if (audioSource != null && hoverSFX != null)
+        {
+            audioSource.PlayOneShot(hoverSFX);
+        }
     }
 
     public void OnPointerExit(PointerEventData eventData)
@@ -36,7 +55,12 @@ public class UpgradeCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExi
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        // FIXED: Now passes both SkillData and the Transform to satisfy the UpgradeManager
+        // MỚI: Phát tiếng khi chọn thẻ
+        if (audioSource != null && clickSFX != null)
+        {
+            audioSource.PlayOneShot(clickSFX);
+        }
+
         if (thisSkillData != null && UpgradeManager.Instance != null)
         {
             UpgradeManager.Instance.SelectUpgrade(thisSkillData, this.transform);

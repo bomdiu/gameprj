@@ -14,14 +14,22 @@ public class PlayerHealth : MonoBehaviour
     [Header("Visual Effects")]
     [SerializeField] private GameObject healParticlePrefab; 
 
+    [Header("Audio Settings")] // MỚI: Quản lý âm thanh nhận sát thương và chết
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip hurtSFX;
+    [SerializeField] private AudioClip deathSFX;
+
     void Start()
     {
         currentHealth = maxHealth; 
-        SyncHealthUI(); // INITIAL SYNC
+        
+        // Tự động tìm AudioSource nếu chưa gán
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+
+        SyncHealthUI(); 
         StartCoroutine(RegenRoutine()); 
     }
 
-    // NEW: Call this to force the UI to match current script variables
     public void SyncHealthUI()
     {
         if (healthBarUI != null)
@@ -51,10 +59,7 @@ public class PlayerHealth : MonoBehaviour
 
         if (healParticlePrefab != null)
         {
-            // 1. Instantiate as usual
             GameObject effect = Instantiate(healParticlePrefab, transform.position, Quaternion.identity, transform);
-            
-            // 2. Start a small Coroutine to handle the "Fade and Cleanup"
             StartCoroutine(FadeAndDestroyParticles(effect, 1.5f));
         }
     }
@@ -66,15 +71,10 @@ public class PlayerHealth : MonoBehaviour
         ParticleSystem ps = effect.GetComponent<ParticleSystem>();
         if (ps != null)
         {
-            // 3. Stop emitting new particles
             ps.Stop();
-            
-            // 4. Wait for the existing particles to live out their remaining time (fade)
-            // We wait for the 'startLifetime' so they can finish their Color Over Lifetime fade
             yield return new WaitForSeconds(ps.main.startLifetime.constantMax);
         }
 
-        // 5. Finally, destroy the object
         Destroy(effect);
     }
 
@@ -82,12 +82,18 @@ public class PlayerHealth : MonoBehaviour
     {
         maxHealth += amount;
         currentHealth += amount;
-        SyncHealthUI(); // REFRESH UI
+        SyncHealthUI(); 
     }
 
     public void ChangeHealth(int amount)
     {
         if (isDead) return;
+
+        // MỚI: Nếu amount < 0 tức là nhận sát thương -> Phát âm thanh hurt
+        if (amount < 0 && audioSource != null && hurtSFX != null)
+        {
+            audioSource.PlayOneShot(hurtSFX);
+        }
 
         currentHealth += amount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
@@ -96,18 +102,22 @@ public class PlayerHealth : MonoBehaviour
         if (currentHealth <= 0) Die();
     }
 
-   void Die()
+    void Die()
     {
         if (isDead) return;
         isDead = true;
+
+        // MỚI: Phát âm thanh khi chết
+        if (audioSource != null && deathSFX != null)
+        {
+            audioSource.PlayOneShot(deathSFX);
+        }
         
-        // --- NEW: Reset persistent stats so the next run is fresh ---
         if (StatsManager.Instance != null)
         {
             StatsManager.Instance.ResetStats();
         }
 
-        // 1. SEND SIGNAL IMMEDIATELY
         if (GameOverManager.Instance != null)
         {
             GameOverManager.Instance.TriggerDeath(transform);
@@ -117,7 +127,6 @@ public class PlayerHealth : MonoBehaviour
             Debug.LogError("CRITICAL: GameOverManager Instance is null in Die()");
         }
 
-        // 2. DISABLE MOVEMENT
         PlayerMovement movement = GetComponent<PlayerMovement>();
         if (movement != null)
         {
@@ -126,11 +135,10 @@ public class PlayerHealth : MonoBehaviour
             if (rb != null) 
             {
                 rb.velocity = Vector2.zero;
-                rb.simulated = false; // Freeze physics instantly
+                rb.simulated = false; 
             }
         }
 
-        // 4. DISABLE COLLISION
         Collider2D col = GetComponent<Collider2D>();
         if (col != null) col.enabled = false;
 

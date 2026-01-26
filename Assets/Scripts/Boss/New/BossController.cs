@@ -4,7 +4,8 @@ public enum BossState
 { 
     Idle,       
     Attacking,  
-    Recovering  
+    Recovering,
+    Intro
 }
 
 public class BossController : MonoBehaviour

@@ -59,6 +59,6 @@ public class CinematicCredits : MonoBehaviour
         }
         
         // 3. Chuyển Scene
-        // SceneManager.LoadScene("MainMenu");
+        SceneManager.LoadScene("Menu");
     }
 }

@@ -33,11 +33,16 @@ public class CreeperAI : MonoBehaviour
     public Color fuseColor = Color.red;
     [Range(5f, 30f)] public float blinkSpeed = 15f; 
 
+    [Header("Audio Settings")] // MỚI: Quản lý âm thanh cho Creeper
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip fuseSFX;       // Âm thanh rít chuẩn bị nổ
+    [SerializeField] private AudioClip explosionSFX;  // Âm thanh nổ
+
     private EnemyPathfinding motor;
     private Transform player;
     private SpriteRenderer spriteRenderer;
     private DamageFlash flashController; 
-    private Enemy_Health health; // Reference to your health script
+    private Enemy_Health health; 
     private Vector3 originalScale;
     private Vector3 markOriginalWorldScale; 
     private bool hasExploded = false;
@@ -47,8 +52,10 @@ public class CreeperAI : MonoBehaviour
         motor = GetComponent<EnemyPathfinding>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         flashController = GetComponent<DamageFlash>(); 
-        health = GetComponent<Enemy_Health>(); // Initialize health reference
+        health = GetComponent<Enemy_Health>(); 
         originalScale = transform.localScale;
+
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
 
         if (exclamationMark != null) 
         {
@@ -63,9 +70,6 @@ public class CreeperAI : MonoBehaviour
     private void Update()
     {
         if (player == null || hasExploded || currentState == CreeperState.Recovering) return;
-
-        // --- CHECK FOR KNOCKBACK ---
-        // Uses your existing IsKnockedBack() method to pause AI
         if (health != null && health.IsKnockedBack()) return;
 
         float distanceToPlayer = Vector2.Distance(transform.position, player.position);
@@ -102,10 +106,17 @@ public class CreeperAI : MonoBehaviour
         motor.SetMoveDir(direction);
     }
 
-private IEnumerator PrimingSequence()
+    private IEnumerator PrimingSequence()
     {
         currentState = CreeperState.Priming;
         motor.StopMoving();
+
+        // MỚI: Phát âm thanh chuẩn bị nổ (loop nếu cần hoặc dùng PlayOneShot)
+        if (audioSource != null && fuseSFX != null)
+        {
+            audioSource.clip = fuseSFX;
+            audioSource.Play();
+        }
 
         if (exclamationMark != null)
         {
@@ -128,19 +139,15 @@ private IEnumerator PrimingSequence()
             timer += Time.deltaTime;
             float progress = timer / fuseTime;
 
-            // --- OVERRIDE LOGIC START ---
-            // If the DamageFlash script is currently active, we skip the blink color logic
             if (flashController != null && flashController.IsFlashing)
             {
-                // We do nothing to the color here, allowing the DamageFlash PropertyBlock to win
+                // DamageFlash is active
             }
             else
             {
-                // Damage flash is over, handle the red blinking
                 float flashValue = Mathf.PingPong(timer * 10f, 1f);
                 spriteRenderer.color = Color.Lerp(originalColor, fuseColor, flashValue);
             }
-            // --- OVERRIDE LOGIC END ---
 
             float growth = Mathf.Lerp(1f, maxScaleMultiplier, progress);
             float jitter = 1f + (Mathf.Sin(Time.time * pulseSpeed) * 0.05f * progress);
@@ -155,6 +162,8 @@ private IEnumerator PrimingSequence()
 
             if (Vector2.Distance(transform.position, player.position) > fuseRange * 1.5f)
             {
+                // MỚI: Dừng âm thanh rít nếu người chơi thoát ra ngoài
+                if (audioSource != null) audioSource.Stop();
                 StartCoroutine(RecoverSequence(originalColor));
                 yield break;
             }
@@ -164,6 +173,7 @@ private IEnumerator PrimingSequence()
 
         Explode();
     }
+
     private IEnumerator RecoverSequence(Color targetColor)
     {
         currentState = CreeperState.Recovering;
@@ -200,6 +210,13 @@ private IEnumerator PrimingSequence()
         if (hasExploded) return;
         hasExploded = true;
 
+        // MỚI: Phát âm thanh vụ nổ
+        // Vì Object sắp bị Destroy, nên dùng PlayClipAtPoint để âm thanh không bị ngắt đột ngột
+        if (explosionSFX != null)
+        {
+            AudioSource.PlayClipAtPoint(explosionSFX, transform.position);
+        }
+
         Vector3 physicsCenter = transform.position;
         Vector3 visualCenter = transform.position + (Vector3)visualExplosionOffset;
 
@@ -210,7 +227,6 @@ private IEnumerator PrimingSequence()
             if (effectSR != null) effectSR.sortingLayerName = explosionSortingLayer;
         }
 
-        // 1. Player Damage
         Collider2D hitPlayer = Physics2D.OverlapCircle(physicsCenter, explosionRadius, playerLayer);
         if (hitPlayer != null)
         {
@@ -220,7 +236,6 @@ private IEnumerator PrimingSequence()
             hitPlayer.GetComponent<PlayerStats>()?.TakeDamage(finalDamage);
         }
 
-        // 2. Push Enemies (Using Direct Rigidbody Access since Health script is unchanged)
         Collider2D[] nearbyEnemies = Physics2D.OverlapCircleAll(physicsCenter, explosionRadius, enemyLayer);
         foreach (Collider2D enemy in nearbyEnemies)
         {
@@ -230,7 +245,7 @@ private IEnumerator PrimingSequence()
             if (enemyRb != null)
             {
                 Vector2 pushDirection = (enemy.transform.position - physicsCenter).normalized;
-                enemyRb.velocity = Vector2.zero; // Reset to ensure consistent push
+                enemyRb.velocity = Vector2.zero; 
                 enemyRb.AddForce(pushDirection * explosionKnockbackForce, ForceMode2D.Impulse);
             }
         }

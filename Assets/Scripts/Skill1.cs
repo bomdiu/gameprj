@@ -16,6 +16,11 @@ public class Skill1 : MonoBehaviour
     public Vector3 handOffset = new Vector3(0.5f, 0.2f, 0f); 
     private GameObject activeBuildUp;
 
+    [Header("Audio Settings")] // MỚI: Âm thanh kỹ năng
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip castStartSFX;    // Âm thanh tụ năng lượng
+    [SerializeField] private AudioClip fireballLaunchSFX; // Âm thanh bắn
+
     [Header("Melee Interruption")]
     public float postAttackDelay = 0.3f; 
 
@@ -40,16 +45,17 @@ public class Skill1 : MonoBehaviour
         cam = Camera.main;
         anim = GetComponent<Animator>();
         if (anim == null) anim = GetComponentInChildren<Animator>();
+
+        // Tự động tìm AudioSource nếu chưa gán
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
     }
 
     void Start() { if (anim != null) visualsTransform = anim.transform; }
 
     void Update()
     {
-        // Check if the skill is unlocked (Samplescene 2 completion)
         if (SkillUnlockManager.Instance != null && !SkillUnlockManager.Instance.skill1Unlocked) return;
 
-        // CHANGED: KeyCode changed to E
         if (Input.GetKeyDown(KeyCode.E) && Time.time >= nextFireTime && !isCasting)
         {
             if (combat != null && combat.isAttacking) return;
@@ -68,6 +74,12 @@ public class Skill1 : MonoBehaviour
 
         FaceMouseCorrectly(); 
         Vector3 spawnPos = GetHandWorldPosition();
+
+        // MỚI: Phát âm thanh tụ năng lượng
+        if (audioSource != null && castStartSFX != null)
+        {
+            audioSource.PlayOneShot(castStartSFX);
+        }
 
         // 1. START CHARGE EFFECTS
         if (fireBuildUpPrefab != null)
@@ -90,6 +102,12 @@ public class Skill1 : MonoBehaviour
         // 3. STOP CHARGE EFFECTS
         if (activeBuildUp != null) Destroy(activeBuildUp);
         if (gatheringParticles != null) gatheringParticles.Stop();
+
+        // MỚI: Phát âm thanh khi bắn
+        if (audioSource != null && fireballLaunchSFX != null)
+        {
+            audioSource.PlayOneShot(fireballLaunchSFX);
+        }
 
         SpawnProjectile();
 

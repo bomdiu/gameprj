@@ -35,6 +35,11 @@ public class Enemy_Health : MonoBehaviour
     [SerializeField] private float deathKnockbackDuration = 0.1f; 
     [SerializeField] private float deathVerticalPop = 0.5f; 
 
+    [Header("Audio Settings")] // MỚI: Quản lý âm thanh cho Enemy
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip enemyHurtSFX;
+    [SerializeField] private AudioClip enemyDeathSFX;
+
     [Header("Visual Orientation")]
     [SerializeField] private bool isFacingRightByDefault = true; 
 
@@ -58,6 +63,9 @@ public class Enemy_Health : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponentInChildren<SpriteRenderer>();
         originalScale = transform.localScale;
+
+        // Tự động tìm AudioSource
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
     }
 
     private void Start()
@@ -78,7 +86,6 @@ public class Enemy_Health : MonoBehaviour
         }
     }
 
-    // UPDATED: Now supports isCrit for visual feedback
     public void TakeDamage(int amount, DamageType damageType, bool isCrit = false)
     {
         if (isDead) return;
@@ -86,9 +93,10 @@ public class Enemy_Health : MonoBehaviour
         int damageToApply = Mathf.Abs(amount);
         if (damageToApply <= 0) return;
 
+        // MỚI: Phát âm thanh khi trúng đòn
+        PlayHurtSFX();
+
         ApplyDamageLogic(damageToApply);
-        
-        // Pass the isCrit flag to the popup
         ShowDamagePopup(damageToApply, isCrit);
 
         if (currentHealth <= 0)
@@ -109,6 +117,12 @@ public class Enemy_Health : MonoBehaviour
     {
         if (isDead) return;
         isDead = true;
+
+        // MỚI: Phát âm thanh khi chết
+        if (audioSource != null && enemyDeathSFX != null)
+        {
+            audioSource.PlayOneShot(enemyDeathSFX);
+        }
 
         if (sr != null && !string.IsNullOrEmpty(deathSortingLayer))
         {
@@ -203,8 +217,9 @@ public class Enemy_Health : MonoBehaviour
         if (amount < 0) 
         {
             int damage = Mathf.Abs(amount);
+            PlayHurtSFX(); // MỚI: Phát âm thanh trúng đòn
             ApplyDamageLogic(damage);
-            ShowDamagePopup(damage, false); // ChangeHealth defaults to non-crit visuals
+            ShowDamagePopup(damage, false); 
             if (damageFlash != null) damageFlash.Flash();
             if (HitStopManager.Instance != null) HitStopManager.Instance.HitStop(hitstopDuration);
             ApplyMorphEffect(); 
@@ -220,6 +235,15 @@ public class Enemy_Health : MonoBehaviour
         {
             GiveEnergy();
             Die();
+        }
+    }
+
+    // Hàm phụ trợ để tránh lặp code phát âm thanh
+    private void PlayHurtSFX()
+    {
+        if (audioSource != null && enemyHurtSFX != null && !isDead)
+        {
+            audioSource.PlayOneShot(enemyHurtSFX);
         }
     }
 
@@ -244,7 +268,6 @@ public class Enemy_Health : MonoBehaviour
     public bool IsKnockedBack() => knockbackTimer > 0;
     private void ApplyDamageLogic(int amount) { currentHealth = Mathf.Max(currentHealth - amount, 0); }
 
-    // UPDATED: Visual logic for Critical Hits
     void ShowDamagePopup(int amount, bool isCrit)
     {
         if (damageTextPrefab != null)
@@ -256,13 +279,12 @@ public class Enemy_Health : MonoBehaviour
             
             if (popupScript != null) 
             {
-                // CRIT VISUALS: Yellow color and larger scale
                 Color popupColor = isCrit ? Color.yellow : Color.white;
                 popupScript.Setup(amount, popupColor); 
 
                 if (isCrit)
                 {
-                    textInstance.transform.localScale *= 1.4f; // Make it pop more!
+                    textInstance.transform.localScale *= 1.4f; 
                 }
             } 
         }

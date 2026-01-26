@@ -16,6 +16,10 @@ public class RangedEnemyAI : MonoBehaviour
     [SerializeField] private Transform firePoint;     
     [SerializeField] private LayerMask obstacleLayer; // Should be set to 'Default' or your Wall layer
 
+    [Header("Audio Settings")] // MỚI: Quản lý âm thanh bắn
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip shootSFX;
+
     private EnemyPathfinding motor;
     private Transform player;
     private Animator anim;
@@ -24,6 +28,9 @@ public class RangedEnemyAI : MonoBehaviour
     private void Start() {
         motor = GetComponent<EnemyPathfinding>();
         anim = GetComponent<Animator>();
+
+        // Tự động tìm AudioSource nếu chưa gán
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
 
         if (motor != null) motor.SetMoveSpeed(generalMoveSpeed);
 
@@ -84,6 +91,11 @@ public class RangedEnemyAI : MonoBehaviour
 
     public void LaunchProjectile() {
         if (player == null) return;
+
+        // MỚI: Phát âm thanh khi đạn được phóng ra
+        if (audioSource != null && shootSFX != null) {
+            audioSource.PlayOneShot(shootSFX);
+        }
 
         if (bulletPrefab != null && firePoint != null) {
             GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);

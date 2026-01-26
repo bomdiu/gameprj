@@ -50,6 +50,10 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float rotationRight1 = 0f; [SerializeField] private float rotationRight2 = 0f; [SerializeField] private float rotationRight3 = 0f;
     [SerializeField] private float rotationLeft1 = 0f; [SerializeField] private float rotationLeft2 = 0f; [SerializeField] private float rotationLeft3 = 0f;
 
+    [Header("Audio Settings")] // MỚI: Thêm âm thanh chém
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip[] slashSounds; // Mảng 3 âm thanh cho combo
+
     [Header("References")]
     [SerializeField] public Animator anim;
     [SerializeField] private Transform visualsTransform;
@@ -69,9 +73,12 @@ public class PlayerCombat : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        playerHealth = GetComponent<PlayerHealth>(); // Finds the health script for lifesteal
+        playerHealth = GetComponent<PlayerHealth>(); 
         cam = Camera.main;
         transform.localScale = Vector3.one;
+
+        // Tự động tìm AudioSource nếu chưa gán
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
 
         if (anim == null) anim = GetComponentInChildren<Animator>();
         if (movement == null) movement = GetComponent<PlayerMovement>();
@@ -81,7 +88,6 @@ public class PlayerCombat : MonoBehaviour
 
     public void StartAttackMove() { }
 
-    // --- UPDATED: Now returns 'isCrit' so the DamageDealer can pass it to the Enemy ---
     public int GetCurrentDamage(out bool isCrit)
     {
         float baseDmg = 0;
@@ -92,24 +98,21 @@ public class PlayerCombat : MonoBehaviour
         float totalDamage = baseDmg + skillDamageBonus;
         isCrit = false;
 
-        // Apply Crit Logic (1.5x)
         if (Random.value < critChance)
         {
             totalDamage *= 1.5f;
-            isCrit = true; // Mark as a crit
+            isCrit = true; 
             Debug.Log("<color=red>CRIT!</color>");
         }
 
         return Mathf.RoundToInt(totalDamage);
     }
 
-    // Keep original method for scripts that don't need the 'isCrit' bool
     public int GetCurrentDamage()
     {
         return GetCurrentDamage(out _);
     }
 
-    // --- UPDATED: Lifesteal Logic ---
     public void ApplyLifesteal(int damageDealt)
     {
         if (lifestealChance > 0 && Random.value < lifestealChance)
@@ -117,13 +120,12 @@ public class PlayerCombat : MonoBehaviour
             int healAmount = Mathf.RoundToInt(damageDealt * lifestealPercent);
             if (playerHealth != null) 
             {
-                playerHealth.ChangeHealth(healAmount); // Heals the player
+                playerHealth.ChangeHealth(healAmount); 
                 Debug.Log("<color=green>Lifesteal: +" + healAmount + " HP</color>");
             }
         }
     }
 
-    // --- ALL ORIGINAL COMBAT LOGIC UNCHANGED ---
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
@@ -180,7 +182,21 @@ public class PlayerCombat : MonoBehaviour
         if (movement != null) movement.canMove = false;
         rb.velocity = Vector2.zero;
         rb.constraints = RigidbodyConstraints2D.FreezeAll;
+
+        // MỚI: Phát âm thanh chém theo comboStep
+        PlaySlashSFX();
+
         lungeCoroutine = StartCoroutine(PerformLunge());
+    }
+
+    // Hàm phụ trợ để phát âm thanh
+    private void PlaySlashSFX()
+    {
+        if (audioSource != null && slashSounds != null && slashSounds.Length >= comboStep)
+        {
+            AudioClip clipToPlay = slashSounds[comboStep - 1];
+            if (clipToPlay != null) audioSource.PlayOneShot(clipToPlay);
+        }
     }
 
     private IEnumerator PerformLunge()

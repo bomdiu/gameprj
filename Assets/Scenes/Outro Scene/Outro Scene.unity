@@ -308,14 +308,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   fadeOverlay: {fileID: 1324367065}
   transitionSpeed: 0.5
-  menuSceneName: Menu
+  menuSceneName: Credits
   outroMusic: {fileID: 8300000, guid: 21dfce3c33f6ed84a9323fab23c907a7, type: 3}
-  maxBgmVolume: 1
+  maxBgmVolume: 0.7
   audioFadeDuration: 10
   outroSequence:
   - note: 
     image: {fileID: 21300000, guid: 94fc2ce7f594d1b459a61b322efa0a8f, type: 3}
-    displayTime: 3.5
+    displayTime: 3
     instantTransition: 0
     soundEffect: {fileID: 0}
     sfxVolume: 1
@@ -335,14 +335,14 @@ MonoBehaviour:
     image: {fileID: 21300000, guid: 09d48b159befda54fac3e9572bfa61ba, type: 3}
     displayTime: 1
     instantTransition: 0
-    soundEffect: {fileID: 0}
-    sfxVolume: 1
+    soundEffect: {fileID: 8300000, guid: 3cebdfee03b47d343aea9acfbfe2db14, type: 3}
+    sfxVolume: 0.05
   - note: 
     image: {fileID: 21300000, guid: 8698ad16311f14b4b84c11e2be58d0e4, type: 3}
     displayTime: 0.3
     instantTransition: 1
     soundEffect: {fileID: 8300000, guid: 9f4bbeaf8cbebd84caae1718290cdab9, type: 3}
-    sfxVolume: 0.3
+    sfxVolume: 0.2
   - note: 
     image: {fileID: 21300000, guid: 6c5ed325963fbb44382db3161bc7a694, type: 3}
     displayTime: 0.3
@@ -359,7 +359,7 @@ MonoBehaviour:
     image: {fileID: 21300000, guid: a044f92e1d4c5bc418e0ae482551b6dd, type: 3}
     displayTime: 6.5
     instantTransition: 0
-    soundEffect: {fileID: 0}
+    soundEffect: {fileID: 8300000, guid: 79f617bd2cd1883479ba466211f6bda4, type: 3}
     sfxVolume: 1
   - note: 
     image: {fileID: 21300000, guid: d6b148fafdeec83408d4b413fd333231, type: 3}
@@ -369,7 +369,7 @@ MonoBehaviour:
     sfxVolume: 1
   - note: 
     image: {fileID: 21300000, guid: c596fb3f876a7a247b766a639b1875dc, type: 3}
-    displayTime: 8
+    displayTime: 7
     instantTransition: 0
     soundEffect: {fileID: 0}
     sfxVolume: 0.1

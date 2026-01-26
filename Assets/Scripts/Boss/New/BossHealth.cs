@@ -153,6 +153,9 @@ public class BossHealth : MonoBehaviour
         isDead = true;
         Debug.Log("BOSS DEAD!");
 
+        BossMusicController music = FindObjectOfType<BossMusicController>();
+        if (music != null) music.StopMusic();
+        
         if (rb != null) rb.velocity = Vector2.zero;
         
         MonoBehaviour[] scripts = GetComponents<MonoBehaviour>();

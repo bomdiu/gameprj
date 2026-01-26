@@ -5,11 +5,11 @@ public class PlayerMovement : MonoBehaviour
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
     [Tooltip("Multiplier for speed upgrades (e.g., 1.1 = +10%)")]
-    public float speedMultiplier = 1f; // NEW: For percentage-based speed upgrades
+    public float speedMultiplier = 1f; 
     
     public float dashDistance = 5f;
     public float dashDuration = 0.2f;
-    public float dashCooldown = 1f; // Common: Can be reduced by upgrades
+    public float dashCooldown = 1f;
 
     [Header("Combat Interactions")]
     [Tooltip("How long (in seconds) the player cannot move or turn after an attack.")]
@@ -26,6 +26,10 @@ public class PlayerMovement : MonoBehaviour
     public float ghostFadeTime = 0.3f;
     public Color ghostColor = new Color(0.8f, 0.8f, 0.8f, 0.6f);
     public Material ghostMaterial;
+
+    [Header("Audio Settings")] // MỚI: Nơi quản lý âm thanh
+    public AudioSource audioSource;
+    public AudioClip dashSFX;
 
     [Header("Components")]
     public Animator anim;
@@ -47,11 +51,14 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         cam = Camera.main;
+        
+        // Tự động tìm AudioSource nếu chưa kéo vào
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+
         if (anim == null) anim = GetComponentInChildren<Animator>();
         if (visualsTransform == null && anim != null) visualsTransform = anim.transform;
         if (visualsTransform != null) playerSR = visualsTransform.GetComponent<SpriteRenderer>();
 
-        // --- STATS PERSISTENCE HANDSHAKE ---
         if (StatsManager.Instance != null)
         {
             PlayerHealth health = GetComponent<PlayerHealth>();
@@ -79,7 +86,6 @@ public class PlayerMovement : MonoBehaviour
             UpdateBackwardAnimation();
         }
 
-        // Uses the current dashCooldown value, which may be lowered by upgrades
         if (Input.GetKeyDown(KeyCode.Space) && Time.time >= lastDash + dashCooldown && moveInput.sqrMagnitude > 0)
         {
             StartDash();
@@ -105,7 +111,6 @@ public class PlayerMovement : MonoBehaviour
     void FixedUpdate()
     {
         if (isDashing) ApplyDashMovement();
-        // Multiplies base speed by the upgrade multiplier
         else if (canMove) rb.velocity = moveInput * (moveSpeed * speedMultiplier);
     }
 
@@ -116,6 +121,12 @@ public class PlayerMovement : MonoBehaviour
         lastDash = Time.time;
         dashDir = moveInput;
         ghostTimer = 0;
+
+        // MỚI: Phát âm thanh Dash
+        if (audioSource != null && dashSFX != null)
+        {
+            audioSource.PlayOneShot(dashSFX);
+        }
 
         int enemyLayer = LayerMask.NameToLayer("Enemy");
         if (enemyLayer != -1)

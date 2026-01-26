@@ -37,7 +37,12 @@ public class ChargeEnemyAI : MonoBehaviour
     public Vector2 lineOffset; 
     public float preChargeWait = 0.8f; 
     public float rotationSpeed = 5f;   
-    public string sortingLayerName = "Shaow"; // Set to your custom layer
+    public string sortingLayerName = "Shaow"; 
+
+    [Header("Audio Settings")] // MỚI: Quản lý âm thanh Charge
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip telegraphSFX;   // Âm thanh khi bắt đầu báo hiệu
+    [SerializeField] private AudioClip chargeDashSFX;  // Âm thanh khi lao đi
 
     private EnemyPathfinding motor;
     private Rigidbody2D rb; 
@@ -54,6 +59,9 @@ public class ChargeEnemyAI : MonoBehaviour
         anim = GetComponent<Animator>(); 
         health = GetComponent<Enemy_Health>(); 
         
+        // Tự động tìm AudioSource
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+
         if (rb != null) {
             rb.freezeRotation = true;
             rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
@@ -121,6 +129,11 @@ public class ChargeEnemyAI : MonoBehaviour
         
         if (exclamationMark != null) exclamationMark.SetActive(true);
 
+        // MỚI: Phát âm thanh báo hiệu tụ lực
+        if (audioSource != null && telegraphSFX != null) {
+            audioSource.PlayOneShot(telegraphSFX);
+        }
+
         lineRenderer.enabled = true;
         float progress = 0;
         float lockWindow = 0.1f; 
@@ -129,7 +142,6 @@ public class ChargeEnemyAI : MonoBehaviour
         Vector3 startPos = GetLineStartPos();
         chargeDirection = (player.position - startPos).normalized;
 
-        // 1. EXTEND & TRACK
         while (progress < 1f) {
             if (health != null && health.IsKnockedBack()) { yield return null; continue; }
             progress += Time.deltaTime * lineExtendSpeed;
@@ -137,7 +149,6 @@ public class ChargeEnemyAI : MonoBehaviour
             yield return null;
         }
 
-        // 2. TRACK ONLY
         float trackingTimer = 0;
         while (trackingTimer < trackingDuration) {
             if (health != null && health.IsKnockedBack()) { yield return null; continue; }
@@ -146,12 +157,10 @@ public class ChargeEnemyAI : MonoBehaviour
             yield return null;
         }
 
-        // 3. LOCK & FADE (The 0.1s moment)
         float fadeTimer = 0;
         while (fadeTimer < lockWindow) {
             fadeTimer += Time.deltaTime;
             float fadeAlpha = Mathf.Lerp(lineOpacity, 0, fadeTimer / lockWindow);
-            // We DON'T update direction here, only the start point and alpha
             UpdateLineVisuals(1f, fadeAlpha, true); 
             yield return null;
         }
@@ -160,6 +169,11 @@ public class ChargeEnemyAI : MonoBehaviour
         if (exclamationMark != null) exclamationMark.SetActive(false);
         lineRenderer.enabled = false;
         if (anim != null) anim.SetTrigger("Charge"); 
+
+        // MỚI: Phát âm thanh khi bắt đầu lao đi
+        if (audioSource != null && chargeDashSFX != null) {
+            audioSource.PlayOneShot(chargeDashSFX);
+        }
         
         Physics2D.IgnoreLayerCollision(gameObject.layer, LayerMask.NameToLayer(enemyLayerName), true);
         
@@ -191,7 +205,6 @@ public class ChargeEnemyAI : MonoBehaviour
         return transform.position + new Vector3(lineOffset.x * flipMultiplier, lineOffset.y, 0);
     }
 
-    // ... Rest of the helper methods (HandleCleanStop, OnCollisionEnter2D, etc.) stay the same ...
     private IEnumerator HandleCleanStop() {
         if (currentState == State.Cooldown) yield break;
         currentState = State.Cooldown;

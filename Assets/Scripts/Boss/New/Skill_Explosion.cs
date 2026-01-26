@@ -8,11 +8,25 @@ public class Skill_Explosion : MonoBehaviour
     public ExplosionSkillData skillData;
     public GameObject indicatorPrefab; // Prefab rỗng có gắn script ExplosionIndicator
 
+    [Header("Audio")] // [MỚI] Phần âm thanh
+    public AudioClip explosionSFX; // Kéo file âm thanh nổ (Bùm!) vào đây
+    private AudioSource audioSource;
+
     [Header("Damage Settings")]
     public LayerMask targetLayer; // Chọn Layer "Player" ở đây
 
     public float currentCooldown = 0f;
     public bool IsReady => currentCooldown <= 0;
+
+    private void Awake()
+    {
+        // [MỚI] Tự động tìm hoặc thêm AudioSource
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+    }
 
     private void Update()
     {
@@ -67,11 +81,16 @@ public class Skill_Explosion : MonoBehaviour
     private IEnumerator HandleExplosionDamage(Vector2 position)
     {
         // Chờ thời gian nổ (phải khớp với thời gian visual bên Indicator)
-        // Giả sử trong skillData bạn có biến explosionDelay
         yield return new WaitForSeconds(skillData.explosionDelay);
 
+        // [MỚI] PHÁT TIẾNG NỔ NGAY LÚC GÂY DAMAGE
+        if (explosionSFX != null && audioSource != null)
+        {
+            // Dùng PlayOneShot để có thể phát chồng nhiều tiếng nổ lên nhau mà không bị ngắt quãng
+            audioSource.PlayOneShot(explosionSFX);
+        }
+
         // Tạo vòng tròn kiểm tra va chạm tại vị trí đặt mìn
-        // Giả sử trong skillData có biến explosionRadius
         Collider2D hit = Physics2D.OverlapCircle(position, skillData.explosionRadius, targetLayer);
 
         if (hit != null)
@@ -80,7 +99,6 @@ public class Skill_Explosion : MonoBehaviour
             PlayerStats player = hit.GetComponent<PlayerStats>();
             if (player != null)
             {
-                // Giả sử trong skillData có biến damage
                 player.TakeDamage(skillData.damage);
             }
         }
