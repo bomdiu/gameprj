@@ -48,10 +48,12 @@ public class Skill2 : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Q) && Time.time >= nextFireTime && !isCasting)
         {
-            if (energy != null && energy.UseEnergy(energyCost)) StartCoroutine(CastRoutine());
+            if (energy != null && energy.UseEnergy(energyCost)) {
+                StartCoroutine(CastRoutine());
+                SkillUIController.Instance.StartCooldown(1, cooldown);
         }
     }
-
+    }
     private IEnumerator CastRoutine()
     {
         isCasting = true; 

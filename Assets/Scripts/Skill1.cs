@@ -61,7 +61,12 @@ public class Skill1 : MonoBehaviour
             if (combat != null && combat.isAttacking) return;
             if (combat != null && (Time.time - combat.lastAttackEndTime < postAttackDelay)) return;
 
-            if (energy != null && energy.UseEnergy(energyCost)) StartCoroutine(CastRoutine());
+            if (energy != null && energy.UseEnergy(energyCost))
+            {
+                
+             StartCoroutine(CastRoutine());
+             SkillUIController.Instance.StartCooldown(2, cooldown);
+            }
         }
     }
 

@@ -32,7 +32,7 @@ public class WaveManager : MonoBehaviour
     public GameObject portalPrefab; 
     public Transform portalSpawnPoint; 
     public float portalFadeDuration = 2.0f; 
-    public float portalSpawnDelay = 3f;
+    public float portalSpawnDelay = 10f;
 
     [Header("Suction Settings")]
     public float suctionRadius = 12f;       
