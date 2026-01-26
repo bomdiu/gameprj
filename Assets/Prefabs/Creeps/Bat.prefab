@@ -155,7 +155,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6be1e4af08e2e3e47b4a74b00bc1f48b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 50
+  maxHealth: 40
   deathSortingLayer: Deatheffect
   damageTextPrefab: {fileID: 8110601638250219120, guid: a12e825899b06414d8893e0404a71d10, type: 3}
   energyReward: 10

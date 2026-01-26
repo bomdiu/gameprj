@@ -313,7 +313,7 @@ MonoBehaviour:
   chaseSpeed: 2
   fuseTime: 0.5
   explosionRadius: 1.72
-  explosionDamage: 25
+  explosionDamage: 35
   explosionKnockbackForce: 10
   visualExplosionOffset: {x: 0, y: -0.1}
   playerLayer:
