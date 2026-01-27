@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: health regen
   m_EditorClassIdentifier: 
   skillName: Regeneration
-  description: Automatically restores a small amount of health every three seconds
+  description: Automatically restores a small amount of HEALTH every 10 seconds
   icon: {fileID: 0}
   skillRarity: 1
   upgradeType: 6
-  valueAmount: 1
+  valueAmount: 0.5
   secondValue: 0

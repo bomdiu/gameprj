@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Maximum Health
   m_EditorClassIdentifier: 
   skillName: Vitality
-  description: Increases your maximum HP
+  description: Increases your MAXIMUM HP
   icon: {fileID: 0}
   skillRarity: 0
   upgradeType: 0

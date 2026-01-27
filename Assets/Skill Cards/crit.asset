@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: crit
   m_EditorClassIdentifier: 
   skillName: Critical Hit
-  description: Increases the chance to deal extra damage on any hit
+  description: Increases the chance to deal extra DAMAGE on any HIT
   icon: {fileID: 0}
   skillRarity: 0
   upgradeType: 7

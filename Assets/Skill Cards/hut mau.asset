@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: hut mau
   m_EditorClassIdentifier: 
   skillName: Vampirism
-  description: Grants a chance to heal yourself whenever you damage an enemy
+  description: Grants a chance to HEAL yourself whenever you damage an enemy
   icon: {fileID: 0}
   skillRarity: 1
   upgradeType: 4
-  valueAmount: 0.05
+  valueAmount: 0
   secondValue: 0.02
