@@ -9890,7 +9890,7 @@ MonoBehaviour:
   speed: 8.2
   lifetime: 2.5
   explosionRadius: 3.5
-  directHitDamage: 60
+  directHitDamage: 45
   maxExplosionDamage: 40
   knockbackForce: 18
   enemyLayer:

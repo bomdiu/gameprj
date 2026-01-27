@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: speed
   m_EditorClassIdentifier: 
   skillName: Agility
-  description: Increases your movement speed
+  description: Increases your MOVEMENT SPEED
   icon: {fileID: 0}
   skillRarity: 0
   upgradeType: 3
-  valueAmount: 1
+  valueAmount: 0.02
   secondValue: 0

@@ -15,7 +15,7 @@ MonoBehaviour:
   minionWaves:
   - name: 
     prefab: {fileID: 194198021288000057, guid: b78671c6c4d9ec240a61386cd2c23c1f, type: 3}
-    count: 2
+    count: 4
   - name: 
     prefab: {fileID: 7261602332989833055, guid: 53fc0da6c24e0f64d9afe3c553739673, type: 3}
     count: 2

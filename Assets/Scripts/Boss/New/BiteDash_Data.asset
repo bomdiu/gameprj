@@ -21,6 +21,6 @@ MonoBehaviour:
   width: 0.6
   telegraphColor: {r: 0.78113204, g: 0.12822352, b: 0.12822352, a: 0.5882353}
   lineMaterial: {fileID: 0}
-  dashSpeed: 10
+  dashSpeed: 12
   dashDuration: 0.6
   recoverTime: 1

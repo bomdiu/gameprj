@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: skill damage
   m_EditorClassIdentifier: 
   skillName: Expertise
-  description: Adds bonus damage to your skills
+  description: Adds bonus damage to your SKILLS
   icon: {fileID: 0}
   skillRarity: 1
   upgradeType: 5

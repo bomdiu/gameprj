@@ -215,7 +215,7 @@ MonoBehaviour:
   maxHealth: 40
   deathSortingLayer: Deatheffect
   damageTextPrefab: {fileID: 8110601638250219120, guid: a12e825899b06414d8893e0404a71d10, type: 3}
-  energyReward: 10
+  energyReward: 7
   hitstopDuration: 0
   knockbackForce: 1.45
   knockbackStunTime: 0.15

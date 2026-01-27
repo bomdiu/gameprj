@@ -18,9 +18,10 @@ MonoBehaviour:
   borderColor: {r: 0.7132075, g: 0, b: 0, a: 0.78431374}
   coreColor: {r: 0.6226415, g: 0.07871127, b: 0.07871127, a: 0.5882353}
   vfxScale: 5
-  damage: 15
+  explosionRadius: 1.5
+  damage: 25
   explosionCount: 5
   spawnInterval: 0.2
-  growthTime: 1
+  explosionDelay: 1.5
   bossRecoverTime: 2
   autoCooldown: 10
