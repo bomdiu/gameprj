@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c1149334329f9e488fe4a4df8ff50b0, type: 3}
   m_Name: skill damage
   m_EditorClassIdentifier: 
-  skillName: Expertise
+  skillName: Skill Boost
   description: Adds bonus damage to your SKILLS
   icon: {fileID: 0}
   skillRarity: 1

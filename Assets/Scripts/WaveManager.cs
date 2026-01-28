@@ -40,7 +40,7 @@ public class WaveManager : MonoBehaviour
     public float maxSuctionStrength = 25f;  
     public float suctionAcceleration = 2.0f; 
     public float absorptionDistance = 0.5f; 
-    public ParticleSystem fireflySystem; // Drag your particle system here!
+    public ParticleSystem fireflySystem;
 
     [Header("Transition Settings")]
     public string nextSceneName; 
@@ -52,7 +52,16 @@ public class WaveManager : MonoBehaviour
     public LayerMask obstacleLayer;      
     public GameObject spawnEffectPrefab; 
     public float effectDuration = 1.0f;  
-    
+
+    [Header("SFX Settings")]
+    public AudioSource audioSource;      
+    public AudioClip portalSpawnSFX;     
+    [Range(0f, 1f)] public float spawnVolume = 1f; // Điều chỉnh âm lượng spawn
+    public AudioClip portalLoopSFX;      
+    [Range(0f, 1f)] public float loopVolume = 0.5f; // Điều chỉnh âm lượng loop (thường nhỏ hơn)
+    public AudioClip playerAbsorbedSFX;  
+    [Range(0f, 1f)] public float absorbedVolume = 1f; // Điều chỉnh âm lượng khi biến mất
+
     [Header("Live Tracking")]
     [SerializeField] private int currentWaveIndex = 0;
     [SerializeField] private int enemiesAlive;
@@ -75,23 +84,16 @@ public class WaveManager : MonoBehaviour
 
     private IEnumerator StartWaveSystem()
     {
-        // Initial delay before first wave
         yield return new WaitForSeconds(3.0f);
 
         while (currentWaveIndex < waves.Count)
         {
             foreach(var config in waves[currentWaveIndex].enemyConfigs) config.currentSpawnedCount = 0;
-
-            // 1. SPAWN THE WAVE
             yield return StartCoroutine(SpawnWave(waves[currentWaveIndex]));
-
-            // 2. WAIT BUFFER (Prevents skipping to upgrade before enemies exist)
             yield return new WaitForSeconds(1.0f);
 
-            // 3. THE WAIT GATE: Strictly wait until all enemies are gone
             while (enemiesAlive > 0 || GameObject.FindGameObjectWithTag("Enemy") != null) 
             {
-                // Safety: If scene is empty but counter is stuck, force zero
                 if (enemiesAlive > 0 && GameObject.FindGameObjectWithTag("Enemy") == null)
                 {
                     enemiesAlive = 0;
@@ -99,7 +101,6 @@ public class WaveManager : MonoBehaviour
                 yield return new WaitForSeconds(0.2f);
             }
 
-            // 4. WAVE IS DEFINITIVELY CLEARED - Now give the upgrade
             if (UpgradeManager.Instance != null)
             {
                 UpgradeManager.Instance.StartWaveEndTransition();
@@ -111,7 +112,6 @@ public class WaveManager : MonoBehaviour
                 }
             }
 
-            // 5. CHECK FOR MAP END
             if (currentWaveIndex == waves.Count - 1)
             {
                 if (SkillUnlockManager.Instance != null)
@@ -123,7 +123,6 @@ public class WaveManager : MonoBehaviour
                 yield break; 
             }
 
-            // 6. PRE-WAVE DELAY
             yield return new WaitForSeconds(2.0f); 
             currentWaveIndex++;
             yield return new WaitForSeconds(timeBetweenWaves); 
@@ -186,6 +185,10 @@ public class WaveManager : MonoBehaviour
 
         yield return new WaitForSeconds(portalSpawnDelay);
 
+        // SFX: Phát âm thanh cổng xuất hiện với âm lượng tùy chỉnh
+        if (audioSource != null && portalSpawnSFX != null)
+            audioSource.PlayOneShot(portalSpawnSFX, spawnVolume);
+
         float timer = 0;
         while (timer < portalFadeDuration)
         {
@@ -198,6 +201,15 @@ public class WaveManager : MonoBehaviour
 
         sr.color = new Color(sr.color.r, sr.color.g, sr.color.b, 1);
         portal.transform.localScale = targetScale;
+
+        // SFX: Bắt đầu phát nhạc Loop (Thiết lập âm lượng trước khi Play)
+        if (audioSource != null && portalLoopSFX != null)
+        {
+            audioSource.clip = portalLoopSFX;
+            audioSource.volume = loopVolume;
+            audioSource.loop = true;
+            audioSource.Play();
+        }
 
         StartCoroutine(PortalSuctionLogic(portal.transform.position));
     }
@@ -230,11 +242,18 @@ public class WaveManager : MonoBehaviour
                     {
                         playerAbsorbed = true;
                         player.gameObject.SetActive(false); 
+
+                        // SFX: Ngừng tiếng loop và phát tiếng hấp thụ với âm lượng tùy chỉnh
+                        if (audioSource != null)
+                        {
+                            audioSource.Stop();
+                            if (playerAbsorbedSFX != null)
+                                audioSource.PlayOneShot(playerAbsorbedSFX, absorbedVolume);
+                        }
                     }
                 }
             }
 
-            // PARTICLE SUCTION LOGIC
             if (fireflySystem != null)
             {
                 var vel = fireflySystem.velocityOverLifetime;

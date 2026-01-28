@@ -41,12 +41,18 @@ public class UpgradeManager : MonoBehaviour
     [SerializeField] private float maxOuterRadius = 4f;
     [SerializeField] private float glowFadeDuration = 1.0f; 
 
+    [Header("SFX Settings")] // --- PHẦN THÊM MỚI ---
+    [SerializeField] private AudioSource audioSource;       // Kéo AudioSource vào đây
+    [SerializeField] private AudioClip vortexSuctionSFX;    // Âm thanh gió hút/năng lượng khi particle bay vào
+    [SerializeField] private AudioClip upgradePanelOpenSFX; // Âm thanh "Ting" hoặc "Whoosh" khi bảng UI hiện ra
+    [SerializeField] [Range(0, 1)] private float vortexVolume = 0.7f;
+    [SerializeField] [Range(0, 1)] private float openVolume = 1.0f;
+
     [Header("Data")]
     public List<SkillData> allSkills; 
 
     private void Update()
     {
-        // --- DEBUG TRIGGER ---
         if (Input.GetKeyDown(KeyCode.M))
         {
             if (upgradePanel != null && !upgradePanel.activeSelf)
@@ -59,15 +65,8 @@ public class UpgradeManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance == null) Instance = this;
+        else { Destroy(gameObject); return; }
 
         if(upgradePanel != null) upgradePanel.SetActive(false); 
         
@@ -96,6 +95,12 @@ public class UpgradeManager : MonoBehaviour
         velocityModule.enabled = true; 
         velocityModule.space = ParticleSystemSimulationSpace.World; 
         colorModule.enabled = true; 
+
+        // SFX: Phát âm thanh hút particle
+        if (audioSource != null && vortexSuctionSFX != null)
+        {
+            audioSource.PlayOneShot(vortexSuctionSFX, vortexVolume);
+        }
 
         float elapsed = 0f; 
         while (elapsed < transitionDelay) 
@@ -170,6 +175,13 @@ public class UpgradeManager : MonoBehaviour
     public void ShowUpgradeOptions()
     {
         Time.timeScale = 0; 
+
+        // SFX: Phát âm thanh mở bảng nâng cấp
+        if (audioSource != null && upgradePanelOpenSFX != null)
+        {
+            audioSource.PlayOneShot(upgradePanelOpenSFX, openVolume);
+        }
+
         upgradePanel.SetActive(true);
 
         foreach (Transform child in cardsContainer)
@@ -212,10 +224,8 @@ public class UpgradeManager : MonoBehaviour
 
     public void SelectUpgrade(SkillData skill, Transform selectedCardTransform)
     {
-        // 1. Apply to the current player in the scene
         ApplySkillToCurrentPlayer(skill);
 
-        // 2. NEW: Sync with StatsManager so it persists across scenes
         if (StatsManager.Instance != null)
         {
             StatsManager.Instance.UpdatePersistentStats(skill);
@@ -269,27 +279,27 @@ public class UpgradeManager : MonoBehaviour
         Time.timeScale = 1; 
     }
 
-  List<SkillData> GetRandomSkills(int count)
-{
-    List<SkillData> filteredPool = new List<SkillData>(allSkills);
-
-    List<SkillData> result = new List<SkillData>();
-    for (int i = 0; i < count; i++)
+    List<SkillData> GetRandomSkills(int count)
     {
-        if (filteredPool.Count == 0) break;
+        List<SkillData> filteredPool = new List<SkillData>(allSkills);
 
-        SkillData.Rarity targetRarity = (Random.value < 0.2f) ? SkillData.Rarity.Rare : SkillData.Rarity.Common;
-        
-        List<SkillData> rarityMatch = filteredPool.FindAll(s => s.skillRarity == targetRarity);
-        
-        SkillData selectedSkill = (rarityMatch.Count > 0) ? rarityMatch[Random.Range(0, rarityMatch.Count)] : filteredPool[0];
-
-        if (selectedSkill != null)
+        List<SkillData> result = new List<SkillData>();
+        for (int i = 0; i < count; i++)
         {
-            result.Add(selectedSkill);
-            filteredPool.Remove(selectedSkill); 
+            if (filteredPool.Count == 0) break;
+
+            SkillData.Rarity targetRarity = (Random.value < 0.2f) ? SkillData.Rarity.Rare : SkillData.Rarity.Common;
+            
+            List<SkillData> rarityMatch = filteredPool.FindAll(s => s.skillRarity == targetRarity);
+            
+            SkillData selectedSkill = (rarityMatch.Count > 0) ? rarityMatch[Random.Range(0, rarityMatch.Count)] : filteredPool[0];
+
+            if (selectedSkill != null)
+            {
+                result.Add(selectedSkill);
+                filteredPool.Remove(selectedSkill); 
+            }
         }
+        return result;
     }
-    return result;
-}
 }

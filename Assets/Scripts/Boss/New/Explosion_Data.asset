@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7cf270d3a84472409e064d73c833412, type: 3}
   m_Name: Explosion_Data
   m_EditorClassIdentifier: 
-  explosionVFX: {fileID: 6187875929811096851, guid: b502df0fed4577a429ab2769a16e0483, type: 3}
+  explosionVFX: {fileID: 2293701075030891320, guid: dabc5b06e8d377a459b900b4ddaab23c, type: 3}
   areaSize: {x: 4, y: 3}
   borderWidth: 0.05
   borderColor: {r: 0.7132075, g: 0, b: 0, a: 0.78431374}
