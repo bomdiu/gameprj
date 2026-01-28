@@ -18,9 +18,17 @@ public class Fireball : MonoBehaviour
     public ParticleSystem explosionParticles; 
 
     private bool hasExploded = false;
+    private PlayerCombat playerCombat; // Reference to find the bonus
 
     void Start()
     {
+        // Find the player and their combat script to get the skillDamageBonus
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            playerCombat = player.GetComponent<PlayerCombat>();
+        }
+
         Destroy(gameObject, lifetime);
     }
 
@@ -50,59 +58,48 @@ public class Fireball : MonoBehaviour
 
         if (explosionParticles != null)
         {
-            // 1. Orphan from Fireball
             explosionParticles.transform.SetParent(null);
-
-            // 2. FIX SCALE: Force it back to normal (1,1,1)
             explosionParticles.transform.localScale = Vector3.one;
-
-            // 3. FIX POSITION: Force Z to 0 so it's not hidden
             Vector3 finalPos = explosionParticles.transform.position;
             finalPos.z = 0;
             explosionParticles.transform.position = finalPos;
-
-            // 4. Play your burst
             explosionParticles.Play();
-
-            // 5. Delete particles after 5 seconds
             Destroy(explosionParticles.gameObject, 5f);
         }
 
-        // Damage calculation
         ApplyExplosionDamage(directHitTarget);
-
-        // Destroy the fireball logic immediately
         Destroy(gameObject);
     }
 
    private void ApplyExplosionDamage(GameObject directHitTarget)
     {
+        // Get the flat bonus from PlayerCombat (kept as skillDamageBonus)
+        int bonus = (playerCombat != null) ? playerCombat.skillDamageBonus : 0;
+
         // --- 1. HANDLE DIRECT HIT ---
         if (directHitTarget != null)
         {
-            // Try regular enemy
-            directHitTarget.GetComponent<Enemy_Health>()?.TakeDamage(directHitDamage, DamageType.NormalAttack, true);
-            
-            // Try Boss [ADDED THIS]
-            directHitTarget.GetComponent<BossHealth>()?.TakeDamage(directHitDamage);
+            // Add the flat bonus to the base direct hit damage
+            int finalDirectDamage = directHitDamage + bonus;
+
+            directHitTarget.GetComponent<Enemy_Health>()?.TakeDamage(finalDirectDamage, DamageType.NormalAttack, true);
+            directHitTarget.GetComponent<BossHealth>()?.TakeDamage(finalDirectDamage);
         }
 
         // --- 2. HANDLE AREA OF EFFECT (AOE) ---
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(transform.position, explosionRadius, enemyLayer);
         foreach (Collider2D enemy in hitEnemies)
         {
-            // Skip the direct hit target so they don't take double damage
             if (enemy.gameObject == directHitTarget) continue;
 
             float distance = Vector2.Distance(transform.position, enemy.transform.position);
             float damageMultiplier = 1f - Mathf.Clamp01(distance / explosionRadius);
-            int finalDamage = Mathf.RoundToInt(maxExplosionDamage * damageMultiplier);
-
-            // Try regular enemy damage
-            enemy.GetComponent<Enemy_Health>()?.TakeDamage(finalDamage, DamageType.NormalAttack, false);
             
-            // Try Boss damage [ADDED THIS]
-            enemy.GetComponent<BossHealth>()?.TakeDamage(finalDamage);
+            // Add the flat bonus to the AOE damage as well
+            int finalAOEDamage = Mathf.RoundToInt((maxExplosionDamage + bonus) * damageMultiplier);
+
+            enemy.GetComponent<Enemy_Health>()?.TakeDamage(finalAOEDamage, DamageType.NormalAttack, false);
+            enemy.GetComponent<BossHealth>()?.TakeDamage(finalAOEDamage);
 
             // --- 3. KNOCKBACK ---
             Rigidbody2D rb = enemy.GetComponent<Rigidbody2D>();

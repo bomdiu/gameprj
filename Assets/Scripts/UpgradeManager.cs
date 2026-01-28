@@ -269,29 +269,27 @@ public class UpgradeManager : MonoBehaviour
         Time.timeScale = 1; 
     }
 
-    List<SkillData> GetRandomSkills(int count)
+  List<SkillData> GetRandomSkills(int count)
+{
+    List<SkillData> filteredPool = new List<SkillData>(allSkills);
+
+    List<SkillData> result = new List<SkillData>();
+    for (int i = 0; i < count; i++)
     {
-        List<SkillData> filteredPool = new List<SkillData>();
-        foreach(var s in allSkills)
-        {
-            if (currentMapIndex == 1 && s.upgradeType == SkillData.SkillType.SkillDamage) continue;
-            filteredPool.Add(s);
-        }
+        if (filteredPool.Count == 0) break;
 
-        List<SkillData> result = new List<SkillData>();
-        for (int i = 0; i < count; i++)
-        {
-            if (filteredPool.Count == 0) break;
-            SkillData.Rarity targetRarity = (Random.value < 0.2f) ? SkillData.Rarity.Rare : SkillData.Rarity.Common;
-            List<SkillData> rarityMatch = filteredPool.FindAll(s => s.skillRarity == targetRarity);
-            SkillData selectedSkill = (rarityMatch.Count > 0) ? rarityMatch[Random.Range(0, rarityMatch.Count)] : filteredPool[0];
+        SkillData.Rarity targetRarity = (Random.value < 0.2f) ? SkillData.Rarity.Rare : SkillData.Rarity.Common;
+        
+        List<SkillData> rarityMatch = filteredPool.FindAll(s => s.skillRarity == targetRarity);
+        
+        SkillData selectedSkill = (rarityMatch.Count > 0) ? rarityMatch[Random.Range(0, rarityMatch.Count)] : filteredPool[0];
 
-            if (selectedSkill != null)
-            {
-                result.Add(selectedSkill);
-                filteredPool.Remove(selectedSkill); 
-            }
+        if (selectedSkill != null)
+        {
+            result.Add(selectedSkill);
+            filteredPool.Remove(selectedSkill); 
         }
-        return result;
     }
+    return result;
+}
 }

@@ -22,6 +22,7 @@ public class Skill2 : MonoBehaviour
 
     private Player_Energy energy;
     private PlayerMovement movement;
+    private PlayerCombat combat; // Added reference
     private Rigidbody2D rb;
     private Camera cam;
     private Animator anim;
@@ -33,6 +34,7 @@ public class Skill2 : MonoBehaviour
     {
         energy = GetComponent<Player_Energy>();
         movement = GetComponent<PlayerMovement>();
+        combat = GetComponent<PlayerCombat>(); // Initialize reference
         rb = GetComponent<Rigidbody2D>();
         cam = Camera.main;
         anim = GetComponent<Animator>();
@@ -43,17 +45,19 @@ public class Skill2 : MonoBehaviour
 
     void Update()
     {
-        // Unlock Check: Skill 2 unlocks after Samplescene 1
+        // KEPT: Skill 2 unlocks after Samplescene 1
         if (SkillUnlockManager.Instance != null && !SkillUnlockManager.Instance.skill2Unlocked) return;
 
         if (Input.GetKeyDown(KeyCode.Q) && Time.time >= nextFireTime && !isCasting)
         {
             if (energy != null && energy.UseEnergy(energyCost)) {
                 StartCoroutine(CastRoutine());
+                // KEPT: UI Index 1
                 SkillUIController.Instance.StartCooldown(1, cooldown);
+            }
         }
     }
-    }
+
     private IEnumerator CastRoutine()
     {
         isCasting = true; 
@@ -93,7 +97,12 @@ public class Skill2 : MonoBehaviour
         BoomerangChain script = boomerang.GetComponent<BoomerangChain>();
         if (script != null)
         {
-            script.Setup(flySpeed, transform, damage, enemyLayer, maxChainHits, mousePos);
+            // --- THE UPDATE: ADDING THE BONUS ---
+            // We take the base 'damage' and add the 'skillDamageBonus' from combat
+            int bonus = (combat != null) ? combat.skillDamageBonus : 0;
+            int finalDamage = damage + bonus;
+
+            script.Setup(flySpeed, transform, finalDamage, enemyLayer, maxChainHits, mousePos);
         }
     }
 
