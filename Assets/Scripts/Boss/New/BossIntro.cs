@@ -8,52 +8,65 @@ public class BossIntro : MonoBehaviour
     public BossAI bossAI; 
     
     [Header("Cấu hình Intro")]
-    public float roarDuration = 2.0f; // Thời gian gầm
-    public float startDelay = 1.0f;   // Chờ 1 chút mới gầm
+    public float roarDuration = 2.0f; 
+    public float startDelay = 0.5f;   // Giảm delay xuống chút vì hội thoại đã dài rồi
 
     [Header("Hệ thống Rung Lắc (Juice)")]
-    [Tooltip("Độ mạnh khi rung bản thân Boss")]
     public float bossShakeIntensity = 0.1f; 
-    [Tooltip("Độ mạnh khi rung Camera")]
     public float cameraShakeIntensity = 0.3f; 
 
     [Header("Âm thanh & Effect")]
-    public AudioClip roarSFX; // Kéo file âm thanh gầm vào đây
-    public GameObject roarEffectPrefab; // Effect gầm (bụi, sóng âm)
+    public AudioClip roarSFX; 
+    public GameObject roarEffectPrefab; 
     
+    [Header("Debug")]
+    public bool testIntroOnStart = false; // Tích vào nếu muốn test Intro mà ko cần hội thoại
+
     private AudioSource audioSource;
-    private Vector3 originalPos; // Để lưu vị trí gốc của Boss khi rung
+    private Vector3 originalPos; 
 
     private void Awake()
     {
-        // Tự động thêm AudioSource nếu chưa có
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
     }
 
     private void Start()
     {
-        // 1. TẮT AI
+        // 1. KHÓA AI NGAY LẬP TỨC
+        // Đảm bảo Boss đứng im nhìn Player trong lúc Player đang đọc hội thoại
         if (bossAI != null) bossAI.enabled = false; 
+        if (boss != null) boss.rb.velocity = Vector2.zero;
 
-        // 2. Bắt đầu Intro
+        // Lưu vị trí gốc
+        originalPos = transform.localPosition;
+
+        // Chỉ chạy ngay nếu đang test (Debug)
+        if (testIntroOnStart)
+        {
+            StartIntroSequence();
+        }
+    }
+
+    // --- HÀM PUBLIC MỚI ĐỂ GỌI TỪ DIALOGUE MANAGER ---
+    public void StartIntroSequence()
+    {
         StartCoroutine(PlayIntroRoutine());
     }
 
     private IEnumerator PlayIntroRoutine()
     {
-        boss.ChangeState(BossState.Intro);
-        boss.rb.velocity = Vector2.zero;
-
-        // Lưu vị trí gốc để tí rung lắc xong trả về
-        originalPos = transform.localPosition;
-
+        // Chờ 1 chút sau khi hộp thoại tắt để đỡ bị giật
         yield return new WaitForSeconds(startDelay);
 
-        // --- BẮT ĐẦU GẦM ---
-        Debug.Log("🦁 BOSS ROAR!");
-        boss.PlayAnim("RoarIntro"); 
-        boss.FacePlayer();     
+        // Chuyển State sang Intro (để animation Roar chạy được nếu Animator set điều kiện)
+        if(boss != null) 
+        {
+            boss.ChangeState(BossState.Intro);
+            boss.FacePlayer();    
+            boss.PlayAnim("RoarIntro"); 
+            Debug.Log("🦁 BOSS ROAR!");
+        }
 
         // 1. Rung Màn Hình
         if (CameraShake.Instance != null)
@@ -67,13 +80,13 @@ public class BossIntro : MonoBehaviour
             audioSource.PlayOneShot(roarSFX);
         }
 
-        // 3. Spawn Effect (Bụi/Sóng âm)
+        // 3. Spawn Effect
         if (roarEffectPrefab != null)
         {
             Instantiate(roarEffectPrefab, transform.position, Quaternion.identity);
         }
 
-        // 4. Rung bản thân Boss (Chạy song song)
+        // 4. Rung bản thân Boss
         StartCoroutine(ShakeBossBody(roarDuration));
 
         // Chờ diễn hoạt xong
@@ -82,26 +95,27 @@ public class BossIntro : MonoBehaviour
         // --- VÀO TRẬN ---
         Debug.Log("⚔️ FIGHT START!");
         
-        // Đảm bảo trả boss về vị trí cũ (phòng khi rung bị lệch)
+        // Trả về vị trí cũ
         transform.localPosition = originalPos;
 
-        boss.ChangeState(BossState.Idle);
-
+        if (boss != null) boss.ChangeState(BossState.Idle);
         if (bossAI != null) bossAI.enabled = true;
 
-        Destroy(this); // Hủy script Intro
+        // Nếu có thanh máu Boss (BossHealthBar UI), bạn nên bật nó lên ở dòng này
+        // Example: UIManager.Instance.ShowBossHealth(true);
+
+        Destroy(this); // Hủy script Intro để tiết kiệm bộ nhớ
     }
 
-    // Coroutine rung lắc bản thân Boss
     private IEnumerator ShakeBossBody(float duration)
     {
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            // Rung ngẫu nhiên xung quanh vị trí gốc
             float x = Random.Range(-1f, 1f) * bossShakeIntensity;
             float y = Random.Range(-1f, 1f) * bossShakeIntensity;
 
+            // Cộng vào originalPos để không bị trôi boss đi xa
             transform.localPosition = originalPos + new Vector3(x, y, 0);
 
             elapsed += Time.deltaTime;

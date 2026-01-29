@@ -96,7 +96,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.64433587, y: 0.09661865}
+  m_Offset: {x: 0.66113555, y: 0.077018976}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -107,7 +107,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1.2479529, y: 1.4807465}
+  m_Size: {x: 1.2815523, y: 1.6319435}
   m_EdgeRadius: 0
 --- !u!114 &9167214744766015157
 MonoBehaviour:
@@ -218,7 +218,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.6526566, y: 0.098112494}
+  m_Offset: {x: 0.6526566, y: 0.08411276}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -229,7 +229,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1.277867, y: 1.500277}
+  m_Size: {x: 1.277867, y: 1.6178746}
   m_EdgeRadius: 0
 --- !u!114 &154626656869275952
 MonoBehaviour:
@@ -574,7 +574,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.6321796, y: 0.09356785}
+  m_Offset: {x: 0.6461793, y: 0.07676822}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -585,7 +585,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1.2580078, y: 1.4861016}
+  m_Size: {x: 1.2860072, y: 1.6428984}
   m_EdgeRadius: 0
 --- !u!114 &4682012735828242600
 MonoBehaviour:
@@ -816,7 +816,7 @@ MonoBehaviour:
   ghostDelay: 0.03
   ghostFadeTime: 0.3
   ghostColor: {r: 0.8, g: 0.8, b: 0.8, a: 0.6}
-  ghostMaterial: {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
+  ghostMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   audioSource: {fileID: 4423761167890377305}
   dashSFX: {fileID: 8300000, guid: a7cbf584c7a1b0245b2066cf91b9cba3, type: 3}
   anim: {fileID: 8541150529680802039}
@@ -1197,7 +1197,7 @@ MonoBehaviour:
   - {x: -0.06022021, y: -0.3285427, z: 0}
   m_ShapePathHash: 594126599
   m_Mesh: {fileID: 0}
-  m_InstanceId: -672930
+  m_InstanceId: -301180
   m_LocalBounds:
     m_Center: {x: 0.021964177, y: -0.27065217, z: 0}
     m_Extent: {x: 0.14328156, y: 0.07159461, z: 0}

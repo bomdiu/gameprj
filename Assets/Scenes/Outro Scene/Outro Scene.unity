@@ -327,7 +327,7 @@ MonoBehaviour:
     sfxVolume: 1
   - note: 
     image: {fileID: 21300000, guid: c78b5c0ea6dacc8498f50c04db31c730, type: 3}
-    displayTime: 4.5
+    displayTime: 5
     instantTransition: 0
     soundEffect: {fileID: 0}
     sfxVolume: 1
@@ -357,13 +357,13 @@ MonoBehaviour:
     sfxVolume: 1
   - note: 
     image: {fileID: 21300000, guid: a044f92e1d4c5bc418e0ae482551b6dd, type: 3}
-    displayTime: 6.5
+    displayTime: 7
     instantTransition: 0
     soundEffect: {fileID: 8300000, guid: 79f617bd2cd1883479ba466211f6bda4, type: 3}
     sfxVolume: 1
   - note: 
     image: {fileID: 21300000, guid: d6b148fafdeec83408d4b413fd333231, type: 3}
-    displayTime: 7
+    displayTime: 6.5
     instantTransition: 0
     soundEffect: {fileID: 0}
     sfxVolume: 1
