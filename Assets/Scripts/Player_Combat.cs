@@ -179,12 +179,18 @@ public class PlayerCombat : MonoBehaviour
             if (comboStep == 3) vfx.transform.localScale *= 1.5f;
         }
 
-        if (weaponPivot != null && weaponPivot.childCount > 0)
+        // Logic updated to select the specific anchor for the current combo step
+        if (weaponPivot != null)
         {
-            GameObject child = weaponPivot.GetChild(0).gameObject; 
-            child.SetActive(true);
-            DamageDealer dealer = child.GetComponent<DamageDealer>();
-            if (dealer != null) dealer.ResetHitList();
+            int hitboxIndex = comboStep - 1; // 1st attack uses index 0, 2nd uses index 1, etc.
+            if (weaponPivot.childCount > hitboxIndex)
+            {
+                GameObject currentHitbox = weaponPivot.GetChild(hitboxIndex).gameObject;
+                currentHitbox.SetActive(true);
+                
+                DamageDealer dealer = currentHitbox.GetComponent<DamageDealer>();
+                if (dealer != null) dealer.ResetHitList();
+            }
         }
     }
 
@@ -223,7 +229,12 @@ public class PlayerCombat : MonoBehaviour
 
     public void DisableAllHitboxes()
     {
-        if (weaponPivot != null && weaponPivot.childCount > 0) 
-            weaponPivot.GetChild(0).gameObject.SetActive(false);
+        if (weaponPivot == null) return;
+
+        // Logic updated to turn off ALL children anchors
+        foreach (Transform child in weaponPivot)
+        {
+            child.gameObject.SetActive(false);
+        }
     }
 }

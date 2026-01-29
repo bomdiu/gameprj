@@ -7595,11 +7595,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3391217366782781205, guid: 9812f00cf30d9284f89eb1a257ce565a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 19.008173
+      value: 19.59
       objectReference: {fileID: 0}
     - target: {fileID: 3391217366782781205, guid: 9812f00cf30d9284f89eb1a257ce565a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -4.4530807
+      value: -4.34
       objectReference: {fileID: 0}
     - target: {fileID: 3391217366782781205, guid: 9812f00cf30d9284f89eb1a257ce565a, type: 3}
       propertyPath: m_LocalPosition.z
@@ -9073,11 +9073,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3391217366782781205, guid: 9812f00cf30d9284f89eb1a257ce565a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 14.97
+      value: 14.74
       objectReference: {fileID: 0}
     - target: {fileID: 3391217366782781205, guid: 9812f00cf30d9284f89eb1a257ce565a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -5.18
+      value: -8.64
       objectReference: {fileID: 0}
     - target: {fileID: 3391217366782781205, guid: 9812f00cf30d9284f89eb1a257ce565a, type: 3}
       propertyPath: m_LocalPosition.z
@@ -9150,11 +9150,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7798623365951786666, guid: 6e4f8bc72b9c7614e900388c0b0fdf69, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.87
+      value: -1.78
       objectReference: {fileID: 0}
     - target: {fileID: 7798623365951786666, guid: 6e4f8bc72b9c7614e900388c0b0fdf69, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -12.22
+      value: -12.36
       objectReference: {fileID: 0}
     - target: {fileID: 7798623365951786666, guid: 6e4f8bc72b9c7614e900388c0b0fdf69, type: 3}
       propertyPath: m_LocalPosition.z
@@ -36958,7 +36958,7 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
---- !u!43 &1151164628
+--- !u!43 &1112343723
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -38298,11 +38298,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3391217366782781205, guid: 9812f00cf30d9284f89eb1a257ce565a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 9.97
+      value: 7.06
       objectReference: {fileID: 0}
     - target: {fileID: 3391217366782781205, guid: 9812f00cf30d9284f89eb1a257ce565a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.2
+      value: 5.39
       objectReference: {fileID: 0}
     - target: {fileID: 3391217366782781205, guid: 9812f00cf30d9284f89eb1a257ce565a, type: 3}
       propertyPath: m_LocalPosition.z
@@ -40686,6 +40686,13 @@ MonoBehaviour:
     m_Bits: 1024
   spawnEffectPrefab: {fileID: 7513434861039698068, guid: 3a009fc93d2c14b438b1b313619d1783, type: 3}
   effectDuration: 1
+  audioSource: {fileID: 0}
+  portalSpawnSFX: {fileID: 0}
+  spawnVolume: 1
+  portalLoopSFX: {fileID: 0}
+  loopVolume: 0.5
+  playerAbsorbedSFX: {fileID: 0}
+  absorbedVolume: 1
   currentWaveIndex: 0
   enemiesAlive: 0
 --- !u!114 &2363112745189416359
@@ -40721,6 +40728,11 @@ MonoBehaviour:
   maxGlowIntensity: 1.53
   maxOuterRadius: 4
   glowFadeDuration: 1.92
+  audioSource: {fileID: 0}
+  vortexSuctionSFX: {fileID: 0}
+  upgradePanelOpenSFX: {fileID: 0}
+  vortexVolume: 0.7
+  openVolume: 1
   allSkills:
   - {fileID: 11400000, guid: 424ed3b8d3d00ac4882ead551b9f8710, type: 2}
   - {fileID: 11400000, guid: 5fd8ecace3898c84cbcc5c824aab19c0, type: 2}
@@ -40813,7 +40825,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: lifestealPercent
-      value: 100
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: visualsTransform
@@ -40830,26 +40842,26 @@ PrefabInstance:
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: slashSounds.Array.data[0]
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 8300000, guid: 70855e9d2457f284f90ecb1cad5aa2f1, type: 3}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: slashSounds.Array.data[1]
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 8300000, guid: 70855e9d2457f284f90ecb1cad5aa2f1, type: 3}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: slashSounds.Array.data[2]
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 8300000, guid: 70855e9d2457f284f90ecb1cad5aa2f1, type: 3}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: attacks.Array.data[0].damage
-      value: 1
+      value: 15
       objectReference: {fileID: 0}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: attacks.Array.data[1].damage
-      value: 2
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: attacks.Array.data[2].damage
-      value: 3
+      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: attacks.Array.data[0].animName
@@ -40893,15 +40905,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: attacks.Array.data[0].lungeDistance
-      value: 1
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: attacks.Array.data[1].lungeDistance
-      value: 0.3
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: attacks.Array.data[2].lungeDistance
-      value: 0.21
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 4763815705922597303, guid: 22642431820d05e42a0ecca535166fb0, type: 3}
       propertyPath: attacks.Array.data[0].cooldownToNext
