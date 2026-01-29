@@ -96,7 +96,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.5532806, y: 0.12791896}
+  m_Offset: {x: 0.64433587, y: 0.09661865}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -107,7 +107,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1.0658424, y: 1.2246535}
+  m_Size: {x: 1.2479529, y: 1.4807465}
   m_EdgeRadius: 0
 --- !u!114 &9167214744766015157
 MonoBehaviour:
@@ -218,7 +218,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.5445283, y: 0.09242159}
+  m_Offset: {x: 0.6526566, y: 0.098112494}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -229,7 +229,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1.0616103, y: 1.124674}
+  m_Size: {x: 1.277867, y: 1.500277}
   m_EdgeRadius: 0
 --- !u!114 &154626656869275952
 MonoBehaviour:
@@ -395,6 +395,88 @@ Transform:
   - {fileID: 1545872815122918716}
   m_Father: {fileID: 8765766086833600188}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4354883602277345745
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1169559547931674747}
+  - component: {fileID: 1670894871384306078}
+  m_Layer: 6
+  m_Name: Glow
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1169559547931674747
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4354883602277345745}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8981842234403479078}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1670894871384306078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4354883602277345745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 073797afb82c5a1438f328866b10b3f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ComponentVersion: 1
+  m_LightType: 3
+  m_BlendStyleIndex: 0
+  m_FalloffIntensity: 0.5
+  m_Color: {r: 1, g: 0.8761399, b: 0, a: 1}
+  m_Intensity: 0
+  m_LightVolumeIntensity: 1
+  m_LightVolumeIntensityEnabled: 0
+  m_ApplyToSortingLayers: 37bf8a84b9fefce05f64bcb80000000021fe1c253f8ca9512f2088eb89bfdd9259e9ab01d1e5bddb6faa835221889770
+  m_LightCookieSprite: {fileID: 0}
+  m_DeprecatedPointLightCookieSprite: {fileID: 0}
+  m_LightOrder: 0
+  m_AlphaBlendOnOverlap: 0
+  m_OverlapOperation: 0
+  m_NormalMapDistance: 3
+  m_NormalMapQuality: 2
+  m_UseNormalMap: 0
+  m_ShadowIntensityEnabled: 0
+  m_ShadowIntensity: 0.75
+  m_ShadowVolumeIntensityEnabled: 0
+  m_ShadowVolumeIntensity: 0.75
+  m_LocalBounds:
+    m_Center: {x: 0, y: -0.00000011920929, z: 0}
+    m_Extent: {x: 0.9985302, y: 0.99853027, z: 0}
+  m_PointLightInnerAngle: 360
+  m_PointLightOuterAngle: 360
+  m_PointLightInnerRadius: 0
+  m_PointLightOuterRadius: 5.34
+  m_ShapeLightParametricSides: 5
+  m_ShapeLightParametricAngleOffset: 0
+  m_ShapeLightParametricRadius: 1
+  m_ShapeLightFalloffSize: 0.5
+  m_ShapeLightFalloffOffset: {x: 0, y: 0}
+  m_ShapePath:
+  - {x: -0.5, y: -0.5, z: 0}
+  - {x: 0.5, y: -0.5, z: 0}
+  - {x: 0.5, y: 0.5, z: 0}
+  - {x: -0.5, y: 0.5, z: 0}
 --- !u!1 &4888198651023148182
 GameObject:
   m_ObjectHideFlags: 0
@@ -492,7 +574,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.54112434, y: 0.09925878}
+  m_Offset: {x: 0.6321796, y: 0.09356785}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -503,7 +585,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1.0758972, y: 1.1787901}
+  m_Size: {x: 1.2580078, y: 1.4861016}
   m_EdgeRadius: 0
 --- !u!114 &4682012735828242600
 MonoBehaviour:
@@ -517,88 +599,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b066c86efba0b7b45919d6100ff17439, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &5603173758505782755
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4998026579913638350}
-  - component: {fileID: 5182568502867708819}
-  m_Layer: 6
-  m_Name: Glow
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4998026579913638350
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5603173758505782755}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8981842234403479078}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5182568502867708819
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5603173758505782755}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 073797afb82c5a1438f328866b10b3f0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_ComponentVersion: 1
-  m_LightType: 3
-  m_BlendStyleIndex: 0
-  m_FalloffIntensity: 0.5
-  m_Color: {r: 1, g: 0.8761399, b: 0, a: 1}
-  m_Intensity: 0
-  m_LightVolumeIntensity: 1
-  m_LightVolumeIntensityEnabled: 0
-  m_ApplyToSortingLayers: 37bf8a84b9fefce05f64bcb80000000021fe1c253f8ca9512f2088eb89bfdd9259e9ab01d1e5bddb6faa835221889770
-  m_LightCookieSprite: {fileID: 0}
-  m_DeprecatedPointLightCookieSprite: {fileID: 0}
-  m_LightOrder: 0
-  m_AlphaBlendOnOverlap: 0
-  m_OverlapOperation: 0
-  m_NormalMapDistance: 3
-  m_NormalMapQuality: 2
-  m_UseNormalMap: 0
-  m_ShadowIntensityEnabled: 0
-  m_ShadowIntensity: 0.75
-  m_ShadowVolumeIntensityEnabled: 0
-  m_ShadowVolumeIntensity: 0.75
-  m_LocalBounds:
-    m_Center: {x: 0, y: -0.00000011920929, z: 0}
-    m_Extent: {x: 0.9985302, y: 0.99853027, z: 0}
-  m_PointLightInnerAngle: 360
-  m_PointLightOuterAngle: 360
-  m_PointLightInnerRadius: 0
-  m_PointLightOuterRadius: 5.34
-  m_ShapeLightParametricSides: 5
-  m_ShapeLightParametricAngleOffset: 0
-  m_ShapeLightParametricRadius: 1
-  m_ShapeLightFalloffSize: 0.5
-  m_ShapeLightFalloffOffset: {x: 0, y: 0}
-  m_ShapePath:
-  - {x: -0.5, y: -0.5, z: 0}
-  - {x: 0.5, y: -0.5, z: 0}
-  - {x: 0.5, y: 0.5, z: 0}
-  - {x: -0.5, y: 0.5, z: 0}
 --- !u!1 &5611830174362784622
 GameObject:
   m_ObjectHideFlags: 0
@@ -695,14 +695,13 @@ GameObject:
   - component: {fileID: 124545744004592096}
   - component: {fileID: 1872031244355235170}
   - component: {fileID: 4763815705922597303}
-  - component: {fileID: 4726504876460891273}
   - component: {fileID: 4570814071239567805}
   - component: {fileID: 4911011566550583577}
   - component: {fileID: 4750035978497869711}
   - component: {fileID: 4589409855391744220}
   - component: {fileID: 4423761167890377305}
-  - component: {fileID: 7626023857302361948}
   - component: {fileID: 3315049838719281351}
+  - component: {fileID: 7736689106557775346}
   m_Layer: 6
   m_Name: Player 1
   m_TagString: Player
@@ -728,7 +727,7 @@ Transform:
   - {fileID: 7752160283951814319}
   - {fileID: 943333679197339682}
   - {fileID: 2885181817907375685}
-  - {fileID: 4998026579913638350}
+  - {fileID: 1169559547931674747}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!70 &2480714760793407510
@@ -817,7 +816,7 @@ MonoBehaviour:
   ghostDelay: 0.03
   ghostFadeTime: 0.3
   ghostColor: {r: 0.8, g: 0.8, b: 0.8, a: 0.6}
-  ghostMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  ghostMaterial: {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
   audioSource: {fileID: 4423761167890377305}
   dashSFX: {fileID: 8300000, guid: a7cbf584c7a1b0245b2066cf91b9cba3, type: 3}
   anim: {fileID: 8541150529680802039}
@@ -889,7 +888,7 @@ MonoBehaviour:
     cooldownToNext: 0.1
   - animName: Attack2
     damage: 20
-    lungeDistance: 0.15
+    lungeDistance: 0.2
     lungeCurve:
       serializedVersion: 2
       m_Curve:
@@ -919,8 +918,8 @@ MonoBehaviour:
     vfxRotation: 0
     cooldownToNext: 0.2
   - animName: Attack3
-    damage: 30
-    lungeDistance: 0.1
+    damage: 25
+    lungeDistance: 0.2
     lungeCurve:
       serializedVersion: 2
       m_Curve:
@@ -970,30 +969,12 @@ MonoBehaviour:
   visualsTransform: {fileID: 7752160283951814319}
   weaponPivot: {fileID: 8765766086833600188}
   movement: {fileID: 124545744004592096}
-  audioSource: {fileID: 0}
+  audioSource: {fileID: 4423761167890377305}
   slashSounds:
   - {fileID: 8300000, guid: 70855e9d2457f284f90ecb1cad5aa2f1, type: 3}
   - {fileID: 8300000, guid: 70855e9d2457f284f90ecb1cad5aa2f1, type: 3}
   - {fileID: 8300000, guid: 70855e9d2457f284f90ecb1cad5aa2f1, type: 3}
   isAttacking: 0
---- !u!114 &4726504876460891273
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6884873344910413240}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d12b94ae2535e71449f0ac18162d0111, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  bulletPrefab: {fileID: 3217526728382125107, guid: 0de3e70076346c144b826c7faf28d229, type: 3}
-  firePoint: {fileID: 9044185793097991107}
-  energyCost: 0
-  recoilForce: 8
-  recoilDuration: 0.1
-  isRecoiling: 0
 --- !u!114 &4570814071239567805
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1007,7 +988,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxEnergy: 100
-  currentEnergy: 100
+  currentEnergy: 0
   energyBar: {fileID: 0}
 --- !u!114 &4911011566550583577
 MonoBehaviour:
@@ -1050,8 +1031,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fireballPrefab: {fileID: 5481305723197541443, guid: ecad316aeb28ce44ca5225a5ad42c80a, type: 3}
-  energyCost: 85
-  cooldown: 10
+  energyCost: 30
+  cooldown: 0.5
   releaseDelay: 0.5
   totalCastTime: 0.5
   fireBuildUpPrefab: {fileID: 2042866080503554971, guid: 6dd314f4f72023c45a8685baf2dd4a24, type: 3}
@@ -1157,7 +1138,32 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &7626023857302361948
+--- !u!114 &3315049838719281351
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6884873344910413240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d66c4491e9a6a0499ea152a7d1f01af, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  boomerangPrefab: {fileID: 2520859879858020890, guid: a4d354fd678cbff46a12b265c9a3412e, type: 3}
+  energyCost: 25
+  cooldown: 5
+  releaseDelay: 0.5
+  totalCastTime: 0.47
+  gatheringParticles: {fileID: 0}
+  handOffset: {x: 0.24, y: 0, z: 0}
+  flySpeed: 10
+  damage: 15
+  maxChainHits: 5
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
+--- !u!114 &7736689106557775346
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1191,35 +1197,10 @@ MonoBehaviour:
   - {x: -0.06022021, y: -0.3285427, z: 0}
   m_ShapePathHash: 594126599
   m_Mesh: {fileID: 0}
-  m_InstanceId: -362176
+  m_InstanceId: -672930
   m_LocalBounds:
     m_Center: {x: 0.021964177, y: -0.27065217, z: 0}
     m_Extent: {x: 0.14328156, y: 0.07159461, z: 0}
---- !u!114 &3315049838719281351
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6884873344910413240}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d66c4491e9a6a0499ea152a7d1f01af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  boomerangPrefab: {fileID: 2520859879858020890, guid: a4d354fd678cbff46a12b265c9a3412e, type: 3}
-  energyCost: 55
-  cooldown: 5
-  releaseDelay: 0.5
-  totalCastTime: 0.47
-  gatheringParticles: {fileID: 0}
-  handOffset: {x: 0.24, y: 0, z: 0}
-  flySpeed: 10
-  damage: 5
-  maxChainHits: 5
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 128
 --- !u!1 &8116056017785863949
 GameObject:
   m_ObjectHideFlags: 0

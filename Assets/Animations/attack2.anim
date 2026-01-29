@@ -89,21 +89,14 @@ AnimationClip:
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
-  - time: 0.15
-    functionName: DisableAllHitboxes
-    data: 
-    objectReferenceParameter: {fileID: 0}
-    floatParameter: 0
-    intParameter: 0
-    messageOptions: 0
-  - time: 0.26666668
+  - time: 0.25
     functionName: TriggerHitbox
     data: 
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
-  - time: 0.23333333
+  - time: 0.28333333
     functionName: DisableAllHitboxes
     data: 
     objectReferenceParameter: {fileID: 0}

@@ -14,9 +14,9 @@ public class GameOverManager : MonoBehaviour
     public ParticleSystem deathParticles;
 
     [Header("Cinematic Settings")]
-    public string deathAnimationState = "Player_Death"; // Exact name of your death state in Animator
-    public float slowdownDuration = 1.2f;              // Time to slow from 1 to 0 speed
-    public float postDeathWaitTime = 1.0f;             // How long to stay on the dead body before fading
+    public string deathAnimationState = "Player_Death"; // Tên state animation chết trong Animator
+    public float slowdownDuration = 1.2f;              // Thời gian giảm tốc độ game về 0
+    public float postDeathWaitTime = 1.0f;             // Thời gian chờ sau khi chết trước khi hiện màn hình đen
 
     [Header("Audio Settings")]
     public AudioSource gameOverSource; 
@@ -46,7 +46,7 @@ public class GameOverManager : MonoBehaviour
         IsGameOver = true;
 
         // --- PHASE 1: SLOW MOTION ---
-        // Gradually decrease game speed to zero
+        // Giảm dần tốc độ game về 0
         float slowTimer = 0;
         float initialTimeScale = Time.timeScale;
         while (slowTimer < slowdownDuration)
@@ -55,29 +55,29 @@ public class GameOverManager : MonoBehaviour
             Time.timeScale = Mathf.Lerp(initialTimeScale, 0f, slowTimer / slowdownDuration);
             yield return null;
         }
-        Time.timeScale = 0f; // Game is now fully frozen
+        Time.timeScale = 0f; // Game đóng băng hoàn toàn
 
         // --- PHASE 2: PLAYER DEATH ANIMATION ---
-        // We play the animation while time is 0, so the Animator MUST use UnscaledTime
+        // Chơi animation chết bằng thời gian thực (Unscaled Time)
         Animator anim = player.GetComponentInChildren<Animator>();
         if (anim != null)
         {
-            anim.updateMode = AnimatorUpdateMode.UnscaledTime; // Force it to ignore Time.timeScale
+            anim.updateMode = AnimatorUpdateMode.UnscaledTime; // Bắt buộc Animator chạy bất chấp TimeScale = 0
             anim.Play(deathAnimationState);
         }
 
         // --- PHASE 3: PARTICLES & WAIT ---
-        // Trigger the death particles
+        // Kích hoạt hiệu ứng tan biến
         if (deathParticles != null)
         {
             deathParticles.transform.position = player.position;
-            // Ensure particles ignore the paused clock
+            // Đảm bảo particle chạy theo thời gian thực
             var main = deathParticles.main;
             main.useUnscaledTime = true; 
             deathParticles.Play();
         }
 
-        // Wait for the animation and particles to finish (using Realtime/Unscaled)
+        // Chờ animation và particle diễn ra xong
         yield return new WaitForSecondsRealtime(postDeathWaitTime);
 
         // --- PHASE 4: UI FADE IN ---
@@ -85,7 +85,7 @@ public class GameOverManager : MonoBehaviour
         blackScreen.color = new Color(0, 0, 0, 0);
         contentGroup.alpha = 0;
 
-        // Start BGM Fade and Play Music
+        // Tắt nhạc nền cũ và bật nhạc Game Over
         AudioSource currentBGM = Camera.main.GetComponent<AudioSource>();
         StartCoroutine(FadeOutBGM(currentBGM));
         if (gameOverSource != null && gameOverMusic != null)
@@ -94,10 +94,10 @@ public class GameOverManager : MonoBehaviour
             gameOverSource.Play();
         }
 
-        // Hard freeze all world objects (Exactly like Upgrade Manager)
+        // Đóng băng vật lý và các object khác để đảm bảo không có gì di chuyển
         FreezeWorldState();
 
-        // Fade in the black screen
+        // Làm tối màn hình dần dần
         float fadeTimer = 0;
         while (fadeTimer < fadeDuration)
         {
@@ -107,7 +107,7 @@ public class GameOverManager : MonoBehaviour
             yield return null;
         }
 
-        // Show buttons
+        // Hiện nút bấm và chữ
         float popupTimer = 0;
         while (popupTimer < 0.5f)
         {
@@ -122,18 +122,18 @@ public class GameOverManager : MonoBehaviour
 
     private void FreezeWorldState()
     {
-        // Freeze Physics
+        // Đóng băng Vật lý
         Rigidbody2D[] allRbs = Object.FindObjectsByType<Rigidbody2D>(FindObjectsSortMode.None);
         foreach (Rigidbody2D rb in allRbs) { rb.simulated = false; }
 
-        // Freeze world particles (except death effect)
+        // Đóng băng Particle môi trường (trừ hiệu ứng chết)
         ParticleSystem[] allParticles = Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None);
         foreach (ParticleSystem ps in allParticles)
         {
             if (ps != deathParticles) ps.Pause(true);
         }
 
-        // Freeze all other animators (enemies, etc.)
+        // Đóng băng các Animator khác (quái vật, v.v.)
         Animator[] allAnims = Object.FindObjectsByType<Animator>(FindObjectsSortMode.None);
         foreach (Animator a in allAnims) { a.speed = 0f; }
     }
@@ -153,17 +153,20 @@ public class GameOverManager : MonoBehaviour
         bgm.volume = startVolume;
     }
 
+    // --- ĐÃ SỬA ĐỔI PHẦN NÀY ---
     public void RetryGame()
     {
-        Time.timeScale = 1f;
+        Time.timeScale = 1f; // Trả lại tốc độ game bình thường
         IsGameOver = false;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        
+        // Thay vì load scene hiện tại, ta load cứng Scene index 2 (Gameplay Scene)
+        SceneManager.LoadScene(2); 
     }
 
     public void BackToMenu()
     {
         Time.timeScale = 1f;
         IsGameOver = false;
-        SceneManager.LoadScene(0);
+        SceneManager.LoadScene(0); // Về Main Menu (Index 0)
     }
 }

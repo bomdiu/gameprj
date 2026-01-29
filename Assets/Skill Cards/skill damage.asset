@@ -17,5 +17,5 @@ MonoBehaviour:
   icon: {fileID: 0}
   skillRarity: 1
   upgradeType: 5
-  valueAmount: 5
+  valueAmount: 2.5
   secondValue: 0

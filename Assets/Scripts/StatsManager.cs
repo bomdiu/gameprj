@@ -12,6 +12,11 @@ public class StatsManager : MonoBehaviour
     public int maxHealth = 100;
     public int healthRegen = 0;
 
+    // --- NEW: Persistent Energy Stats ---
+    [Header("Persistent Energy Stats")]
+    public int maxEnergy = 100;
+    public int currentEnergy = 0;
+
     [Header("Persistent Combat Stats")]
     public int damageBonus = 0; // Adds to damage1, 2, and 3
     public float critChance = 0.01f;
@@ -40,8 +45,14 @@ public class StatsManager : MonoBehaviour
     {
         speedMultiplier = 1f;
         dashCooldown = 1f;
+        
         maxHealth = 100;
         healthRegen = 0;
+        
+        // --- Reset Energy ---
+        maxEnergy = 100;
+        currentEnergy = 0; 
+
         damageBonus = 0;
         critChance = 0.01f;
         lifestealChance = 0.01f;
@@ -97,7 +108,7 @@ public class StatsManager : MonoBehaviour
             // Optionally reset current health to max when entering a new scene
             health.currentHealth = maxHealth; 
 
-            // --- THE FIX: Tell the Health Script to update the UI Bar ---
+            // Tell the Health Script to update the UI Bar
             health.SyncHealthUI();
         }
 

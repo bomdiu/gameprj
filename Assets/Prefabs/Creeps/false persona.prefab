@@ -370,7 +370,7 @@ MonoBehaviour:
   maxHealth: 115
   deathSortingLayer: Deatheffect
   damageTextPrefab: {fileID: 8110601638250219120, guid: a12e825899b06414d8893e0404a71d10, type: 3}
-  energyReward: 10
+  energyReward: 15
   hitstopDuration: 0
   knockbackForce: 1.45
   knockbackStunTime: 0.15
@@ -386,7 +386,7 @@ MonoBehaviour:
   deathVerticalPop: 0.5
   audioSource: {fileID: 3671045868445845629}
   enemyHurtSFX: {fileID: 8300000, guid: 5b89f9c0f2a58114f9612fadb2c3c02a, type: 3}
-  enemyDeathSFX: {fileID: 8300000, guid: 1b7594c03e4810d4db1f0da424a2c56c, type: 3}
+  enemyDeathSFX: {fileID: 0}
   isFacingRightByDefault: 1
   currentHealth: 0
 --- !u!114 &6706826769847076501
@@ -437,7 +437,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1024
   enemyLayerName: Enemy
-  damage: 25
+  damage: 20
   walkSpeed: 1
   chargeSpeed: 10
   chargeDuration: 0.3

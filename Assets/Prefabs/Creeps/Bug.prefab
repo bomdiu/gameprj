@@ -157,10 +157,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6be1e4af08e2e3e47b4a74b00bc1f48b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 60
+  maxHealth: 50
   deathSortingLayer: Deatheffect
   damageTextPrefab: {fileID: 8110601638250219120, guid: a12e825899b06414d8893e0404a71d10, type: 3}
-  energyReward: 5
+  energyReward: 8
   hitstopDuration: 0
   knockbackForce: 1.45
   knockbackStunTime: 0.15
@@ -176,7 +176,7 @@ MonoBehaviour:
   deathVerticalPop: 0.5
   audioSource: {fileID: 108677259770251600}
   enemyHurtSFX: {fileID: 8300000, guid: 5b89f9c0f2a58114f9612fadb2c3c02a, type: 3}
-  enemyDeathSFX: {fileID: 8300000, guid: 1b7594c03e4810d4db1f0da424a2c56c, type: 3}
+  enemyDeathSFX: {fileID: 0}
   isFacingRightByDefault: 1
   currentHealth: 0
 --- !u!114 &9037773837044986874
@@ -238,7 +238,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1dc24f97723f914d8f5dd28be7bdf41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damage: 10
+  damage: 5
   attackCooldown: 1.5
   attackTriggerName: Attack
 --- !u!70 &2368162368489050516
