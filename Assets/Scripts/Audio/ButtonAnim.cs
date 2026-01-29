@@ -31,8 +31,7 @@ public class ButtonAnim : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
 
     void Update()
     {
-        // Vector3.Lerp giúp chuyển đổi giá trị từ A sang B một cách mượt mà theo thời gian
-        // Thay vì đổi kích thước cái "bụp", nó sẽ lướt từ từ
-        transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.deltaTime * speed);
+        // Dùng unscaledDeltaTime để nút vẫn anim được khi game đang Pause
+        transform.localScale = Vector3.Lerp(transform.localScale, targetScale, Time.unscaledDeltaTime * speed);
     }
 }

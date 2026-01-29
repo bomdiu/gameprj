@@ -249,7 +249,7 @@ MonoBehaviour:
   isFacingRightByDefault: 0
   staticLayer:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 1024
   staticLookAhead: 1
   staticAvoidForce: 1
   staticDetectionRadius: 0.9
@@ -404,7 +404,7 @@ MonoBehaviour:
   - {x: -0.022414804, y: -0.14873892, z: 0}
   m_ShapePathHash: -1960788593
   m_Mesh: {fileID: 0}
-  m_InstanceId: -409606
+  m_InstanceId: -82416
   m_LocalBounds:
     m_Center: {x: 0.006823957, y: -0.09243742, z: 0}
     m_Extent: {x: 0.17193133, y: 0.056301504, z: 0}

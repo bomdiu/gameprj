@@ -43,7 +43,7 @@ public class PlayerHealth : MonoBehaviour
     {
         while (!isDead)
         {
-            yield return new WaitForSeconds(3f);
+            yield return new WaitForSeconds(10f);
             if (healthRegen > 0 && currentHealth < maxHealth)
             {
                 Heal(healthRegen);

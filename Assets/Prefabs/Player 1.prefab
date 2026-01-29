@@ -96,7 +96,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.4910954, y: 0.12791896}
+  m_Offset: {x: 0.5532806, y: 0.12791896}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -107,7 +107,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.9414719, y: 1.2246535}
+  m_Size: {x: 1.0658424, y: 1.2246535}
   m_EdgeRadius: 0
 --- !u!114 &9167214744766015157
 MonoBehaviour:
@@ -218,7 +218,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.48483062, y: 0.09242159}
+  m_Offset: {x: 0.5445283, y: 0.09242159}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -229,7 +229,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.94221497, y: 1.124674}
+  m_Size: {x: 1.0616103, y: 1.124674}
   m_EdgeRadius: 0
 --- !u!114 &154626656869275952
 MonoBehaviour:
@@ -492,7 +492,7 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.4565524, y: 0.09925878}
+  m_Offset: {x: 0.54112434, y: 0.09925878}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -503,7 +503,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.9067533, y: 1.1787901}
+  m_Size: {x: 1.0758972, y: 1.1787901}
   m_EdgeRadius: 0
 --- !u!114 &4682012735828242600
 MonoBehaviour:
@@ -810,7 +810,6 @@ MonoBehaviour:
   dashDistance: 1.34
   dashDuration: 0.17
   dashCooldown: 1
-  directionLockTime: 0.3
   dashEffectPrefab: {fileID: 4396163641477242446, guid: 613ecc41e3f85d04f81b8c0c52703c7e, type: 3}
   vfxOffset: {x: 0, y: -0.1, z: 0}
   vfxDestroyTime: 0.5
@@ -818,11 +817,11 @@ MonoBehaviour:
   ghostDelay: 0.03
   ghostFadeTime: 0.3
   ghostColor: {r: 0.8, g: 0.8, b: 0.8, a: 0.6}
-  ghostMaterial: {fileID: 0}
+  ghostMaterial: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   audioSource: {fileID: 4423761167890377305}
   dashSFX: {fileID: 8300000, guid: a7cbf584c7a1b0245b2066cf91b9cba3, type: 3}
-  anim: {fileID: 0}
-  visualsTransform: {fileID: 0}
+  anim: {fileID: 8541150529680802039}
+  visualsTransform: {fileID: 7752160283951814319}
   canMove: 1
 --- !u!114 &1872031244355235170
 MonoBehaviour:
@@ -856,51 +855,126 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 327331561c5cf0b4489485e499dcf5b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damage1: 20
-  damage2: 20
-  damage3: 30
-  critChance: 0
-  lifestealChance: 0
+  attacks:
+  - animName: Attack1
+    damage: 15
+    lungeDistance: 0.2
+    lungeCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 2
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    vfxPrefab: {fileID: 532205575861994189, guid: c42b918df61a4e744b4de1809176c431, type: 3}
+    vfxOffset: 0.6
+    vfxRotation: 80
+    cooldownToNext: 0.1
+  - animName: Attack2
+    damage: 20
+    lungeDistance: 0.15
+    lungeCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 2
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    vfxPrefab: {fileID: 1524967161034133249, guid: 9e433e7e2306c4c499c4fe3dec097c0f, type: 3}
+    vfxOffset: 0.6
+    vfxRotation: 0
+    cooldownToNext: 0.2
+  - animName: Attack3
+    damage: 30
+    lungeDistance: 0.1
+    lungeCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 0.8353176
+        value: 0.92757154
+        inSlope: 0.8253727
+        outSlope: 0.8253727
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    vfxPrefab: {fileID: 5354339885753557583, guid: b61f3f1a25d1b614dba85880b3e75dac, type: 3}
+    vfxOffset: 0.6
+    vfxRotation: 0
+    cooldownToNext: 0.3
+  lastAttackEndTime: 0
+  critChance: 100
+  lifestealChance: 100
   lifestealPercent: 0.05
   skillDamageBonus: 0
-  cooldown1to2: 0.1
-  cooldown2to3: 0.2
-  cooldown3to1: 0.5
-  comboWindow: 0.9
-  bufferWindow: 0.7
-  lungeDistance: 0.2
-  finalLungeDistance: 0.4
-  lungeDuration: 0.1
-  hitbox1: {fileID: 2466731918841960298}
-  hitbox2: {fileID: 4888198651023148182}
-  hitbox3: {fileID: 1142209497071232872}
-  splashRight1: {fileID: 532205575861994189, guid: c42b918df61a4e744b4de1809176c431, type: 3}
-  splashRight2: {fileID: 1524967161034133249, guid: 9e433e7e2306c4c499c4fe3dec097c0f, type: 3}
-  splashRight3: {fileID: 5354339885753557583, guid: b61f3f1a25d1b614dba85880b3e75dac, type: 3}
-  splashLeft1: {fileID: 3250441190374544786, guid: 49f7a01678147ec4e95dd7f537143412, type: 3}
-  splashLeft2: {fileID: 3333360265719564425, guid: b213850443115e24c8354587615e15a4, type: 3}
-  splashLeft3: {fileID: 3420598281490341572, guid: 7ab618f86d9d874478729aebdc6afe98, type: 3}
-  offsetRight1: 0.8
-  offsetRight2: 0.8
-  offsetRight3: 0.9
-  offsetLeft1: 0.8
-  offsetLeft2: 0.8
-  offsetLeft3: 0.9
-  rotationRight1: 70
-  rotationRight2: 30
-  rotationRight3: 0
-  rotationLeft1: 120
-  rotationLeft2: 150
-  rotationLeft3: 180
-  audioSource: {fileID: 4423761167890377305}
+  comboWindow: 0.8
+  bufferWindow: 0.25
+  lungeDuration: 0.12
+  anim: {fileID: 8541150529680802039}
+  visualsTransform: {fileID: 7752160283951814319}
+  weaponPivot: {fileID: 8765766086833600188}
+  movement: {fileID: 124545744004592096}
+  audioSource: {fileID: 0}
   slashSounds:
   - {fileID: 8300000, guid: 70855e9d2457f284f90ecb1cad5aa2f1, type: 3}
   - {fileID: 8300000, guid: 70855e9d2457f284f90ecb1cad5aa2f1, type: 3}
   - {fileID: 8300000, guid: 70855e9d2457f284f90ecb1cad5aa2f1, type: 3}
-  anim: {fileID: 8541150529680802039}
-  visualsTransform: {fileID: 0}
-  movement: {fileID: 124545744004592096}
-  lastAttackEndTime: 0
   isAttacking: 0
 --- !u!114 &4726504876460891273
 MonoBehaviour:
@@ -1117,7 +1191,7 @@ MonoBehaviour:
   - {x: -0.06022021, y: -0.3285427, z: 0}
   m_ShapePathHash: 594126599
   m_Mesh: {fileID: 0}
-  m_InstanceId: 46312
+  m_InstanceId: -362176
   m_LocalBounds:
     m_Center: {x: 0.021964177, y: -0.27065217, z: 0}
     m_Extent: {x: 0.14328156, y: 0.07159461, z: 0}
